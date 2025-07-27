@@ -13,6 +13,15 @@ struct Color {
     // constructors  
     Color(uint8_t x, uint8_t y, uint8_t z, uint8_t w) : r(x), g(y), b(z), a(w) {}
     Color(uint32_t c = 0xFFFFFFFF) : color(c) {}
+    // lets you add colors
+    Color operator+(Color const& c2) {
+        Color c;
+        c.r = r + c2.r;
+        c.g = g + c2.g;
+        c.b = b + c2.b;
+        c.a = a + c2.a;
+        return c;
+    }
 }; // define the color vars, each channel is an 8 bit int and the color is stored as a 32 bit int  
 
 

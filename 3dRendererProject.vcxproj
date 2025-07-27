@@ -126,7 +126,6 @@
     <ClCompile Include="3dRendererProject.cpp" />
     <ClCompile Include="DrawFuncs.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="ShadePixels.cpp" />
     <ClCompile Include="Textures.cpp" />
     <ClCompile Include="TriCastLib.hpp" />
     <ClCompile Include="QUATERNION.hpp" />

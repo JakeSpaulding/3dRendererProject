@@ -83,6 +83,7 @@ int main(void) {
     VBO vb;
     EBO eb;
     Mesh mesh(vb, eb);
+    mesh.material.texture = pix;
 
     // Add triangles to the mesh
     mesh.newTri(a, b, c); // Main triangle
@@ -95,7 +96,7 @@ int main(void) {
 
     // Create framebuffer and render
     fbo screenframe(Screen_x, Screen_y);
-    screenframe.drawMesh(mesh, camera1.projMat, pix);
+    screenframe.drawMesh(mesh, camera1.projMat);
 
     // Write framebuffer to BMP
     FBOtBMP(screenframe.buffer, "test2.bmp", Screen_x, Screen_y);

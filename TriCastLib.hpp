@@ -13,12 +13,14 @@ inline float edgeFunction(vec3 const& A, vec3 const& B, vec2 const& C) {
 }
 
 // interpolates vertex attributes c 
-inline float VattInterpolate(const float w0, const float w1, const float w2, const float c0, const float c1, const float c2, const float z) {
-	return z * (w0 * c0 + w1 * c1 + w2 * c2);
+inline float VattInterpolate(vec3 const& w, const float c0, const float c1, const float c2, const float z) {
+	return z * (w[0] * c0 + w[1] * c1 + w[2] * c2);
 }
+
+// interpolates vertex attributes of any type
 template <typename T>
-inline T baryInterpolate(float w0, float w1, float w2, T c0, T c1, T c2, float z) {
-	return z * (w0 * c0 + w1 * c1 + w2 * c2);
+inline T baryInterpolate(vec3 const& w, T c0, T c1, T c2, float z) {
+	return z * (w[0] * c0 + w[1] * c1 + w[2] * c2);
 }
 
 #endif

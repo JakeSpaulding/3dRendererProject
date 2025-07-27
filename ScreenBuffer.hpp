@@ -8,16 +8,26 @@
 struct fbo {
 	uint32_t screen_width;
 	uint32_t screen_height;
-	uint8_t upres;
+	uint8_t samples;
 	std::vector<Color> buffer;// initialize the buffer
+	std::vector<Color> frame; // just stores the output frame
 	std::vector<float> Zbuffer; // initialize the depth buffer
+	std::vector<float> Zframe; // stores the output frame
 
 	// constructor width height and samples
-	fbo(uint32_t sw, uint32_t sh, uint8_t upr = 1): screen_height(sh), upres(upr), screen_width(sw) {
-		buffer.resize(screen_height * screen_width * upres); // allocate size
-		Zbuffer.resize(screen_height * screen_width * upres);
-		std::fill(&buffer[0].color, &buffer[0].color + buffer.size(), 0); // fill with zeros
-		std::fill(&Zbuffer[0], &Zbuffer[0] + Zbuffer.size(), 1.0f);
+	fbo(uint32_t sw, uint32_t sh, uint8_t upr = 1): screen_height(sh), samples(upr), screen_width(sw) {
+		if (samples > 1) {
+			buffer.resize(screen_height * screen_width * samples); // allocate size
+			std::fill(&frame[0].color, &frame[0].color + frame.size(), 0); // fill with zeros
+			Zbuffer.resize(screen_height * screen_width * samples);
+			std::fill(&Zbuffer[0], &Zbuffer[0] + Zbuffer.size(), 1.0f);
+
+		}
+		Zframe.resize(screen_height * screen_width ); // allocate size
+		frame.resize(screen_height * screen_width); // allocate size
+		
+		std::fill(&frame[0].color, &frame[0].color + frame.size(), 0); // fill with zeros
+		std::fill(&Zframe[0], &Zframe[0] + Zframe.size(), 1.0f);
 	}
 
 	// draws the range with MSAA
