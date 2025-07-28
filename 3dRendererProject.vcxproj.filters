@@ -30,7 +30,7 @@
     <ClCompile Include="3dRendererProject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Textures.cpp">
+    <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Mesh.cpp">
@@ -51,9 +51,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ScreenBuffer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VertSettings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stb_image.h">
@@ -88,6 +85,9 @@
     </ClInclude>
     <ClInclude Include="PixelShadeFuncs.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VertSettings.hpp">
+      <Filter>Header Files\Geometry defs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

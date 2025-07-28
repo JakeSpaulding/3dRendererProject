@@ -5,4 +5,9 @@
 struct Material {
 	texture2d texture;
 
+	Material(const char* filename) {
+		texture.loadTexturePNG(filename);
+	}
+	Material(){
+	}
 };

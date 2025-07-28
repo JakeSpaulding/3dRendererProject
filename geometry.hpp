@@ -30,10 +30,6 @@ struct Vert {
     // default constructor  
 
     Vert(vec3 p, vec2 tx) : pos(vec3(p[0], p[1], p[2])), UV(vec2(tx[0], tx[1])), N(vec3(0, 0, 0)), color{ 0,0,0,0 } {}
-    // compare values  
-    bool operator==(Vert const& vert2) const {  
-        return (pos == vert2.pos && vert2.UV == UV);  
-    }  
 #endif  
 
 };  
@@ -46,6 +42,8 @@ struct Mesh {
     VBO VB; // vertex buffer  
     EBO EB; // index buffer  
     Material material; // material data
+
+    // computes vertex normals
     void computeNormals();
 
     Mesh(VBO v, EBO id) : VB(v), EB(id) { computeNormals(); }
@@ -63,7 +61,7 @@ struct Mesh {
         addVert(c);  
     }  
     // takes point and color data to add a new triangle  
-    void newTri(vec3 const& ap, const uint32_t ac, vec3 const& bp, const uint32_t bc, vec3 const& cp, const uint32_t cc) {  
+    void newTri(vec3 const& ap, vec2 const& ac, vec3 const& bp, vec2 const& bc, vec3 const& cp, vec2 const& cc) {  
         addVert(Vert(ap,ac));  
         addVert(Vert(bp,bc));  
         addVert(Vert(cp,cc));  

@@ -1,6 +1,5 @@
 // contains the texture struct
-#ifndef TEXTURES_HPP
-#define TEXTURES_HPP
+#pragma once
 #include "stb_image.h"
 #include "geometry.hpp"
 #include <fstream>
@@ -54,8 +53,8 @@ struct texture2d {
     }
     // nearest neighbor
     const Color nearestN(float u, float v) const {
-        unsigned int x = std::min(unsigned int(u * w + 0.5f), w - 1);
-        unsigned int y = std::min(unsigned int(v * h + 0.5f), h - 1); // round coords
+        unsigned int x = std::min(static_cast<unsigned int>(u * w + 0.5f), w - 1);
+        unsigned int y = std::min(static_cast<unsigned int>(v * h + 0.5f), h - 1); // round coords
         return img[y * w + x];
     }
     // bilinear filter
@@ -63,10 +62,10 @@ struct texture2d {
         // get the pixel coords
         float x = u * (w - 1), y = v * (h - 1);
 
-        unsigned int x0 = floor(x);
-        unsigned int x1 = std::min(x0 + 1, w - 1);
-        unsigned int y0 = floor(y);
-        unsigned int y1 = std::min(y0 + 1, h - 1);
+        unsigned int x0 = static_cast<unsigned int>(floor(x));
+        unsigned int x1 = std::min(static_cast<unsigned int>(x0 + 1), w - 1);
+        unsigned int y0 = static_cast<unsigned int>(floor(y));
+        unsigned int y1 = std::min(static_cast<unsigned int>(y0 + 1), h - 1);
 
         float fx = x - x0;
         float fy = y - y0;
@@ -116,4 +115,3 @@ texture2d White_texture(Color(0xFFFFFFFF));
 texture2d Red_texture(Color(0xFF0000FF));
 texture2d Green_texture(Color(0x00FF00FF));
 texture2d Blue_texture(Color(0x0000FFFF));
-#endif
