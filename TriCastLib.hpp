@@ -1,5 +1,4 @@
-#ifndef TRICASTLIB_HPP
-#define TRICASTLIB_HPP
+#pragma once
 // contains functions for geometry math
 #include "geometry.hpp"
 
@@ -22,5 +21,3 @@ template <typename T>
 inline T baryInterpolate(vec3 const& w, T c0, T c1, T c2, float z) {
 	return z * (w[0] * c0 + w[1] * c1 + w[2] * c2);
 }
-
-#endif

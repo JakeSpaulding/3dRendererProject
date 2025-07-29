@@ -1,6 +1,4 @@
-#ifndef GEOMETRY_HPP  
-#define GEOMETRY_HPP  
-
+#pragma once
 // contains the data type for actually making geometry  
 #include <vector>  
 #include "matlib.hpp"  
@@ -73,5 +71,3 @@ struct Mesh {
         addVert(Vert(cp,cc));  
     }  
 };  
-
-#endif

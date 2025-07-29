@@ -1,6 +1,4 @@
-#ifndef MATRIX_HPP
-#define MATRIX_HPP
-
+#pragma once
 // this contains the structs for different sized matricies
 #include "vectors.hpp"
 
@@ -184,5 +182,3 @@ struct mat4 : Mbase<4> {
         return *this;
     }
 };
-
-#endif // MATRIX_HPP

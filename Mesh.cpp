@@ -1,6 +1,9 @@
 #include "geometry.hpp"
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <vector>
+
 // split an n-gon using fan method
 
 // adds a vertex to the mesh (if it is not already there)
@@ -40,35 +43,69 @@ void Mesh::computeNormals() {
 
 // takes an obj file and loads the vertex data
 void Mesh::loadOBJ(const char* filename) {
-	std::vector<float> vp; // store all of the positions
+	// open the file
+	std::ifstream file(filename);
+	if (!file) throw std::runtime_error("Cannot open file");
+
+	std::string line; // will store each line of the file
+	std::vector<vec3> vp; // store all of the positions
 	std::vector<int> ids; // store all of the iindexes for the tris
-	std::vector <float> vt; // store the texture data
-
-	// handle the face logic (for a quad for now
-	std::vector<int> face;
+	std::vector <vec2> vt; // store the texture data
+	std::vector <vec3> vn; // stores normals
+	std::vector<float>va; // stores the optional v-attribues
 	
-	// fill the face up
+	while (std::getline(file, line)){
+		std::istringstream iss(line); // treat the line like a stream
+		std::string prefix; // store the prefix
+		iss >> prefix;
+		
+		// check if it's positions
+		if (prefix == "v") {
+			float x, y, z;
+			iss >> x >> y >> z;
+			vp.push_back(vec3(x, y, z));
+		}
+		// if it's texture coords
+		else if (prefix == "vt") {
+			float u, v;
+			iss >> u >> v;
+			vt.push_back(vec2(u, v));
+		}
+		// if it's normals
+		else if (prefix == "vn") {
+			float nx, ny, nz;
+			iss >> nx >> ny >> nz;
+			vn.push_back(vec3(nx, ny, nz));
+		}
+		// if it's face data
+		else if (prefix == "f") {
+			// fill the face up
+			std::vector<int> face; // store the face
+			std::string id; // will store the current id
 
-	// if it's a triangle just add it to the ids
-	if (face.size() == 3) {
-		for (float v : face) ids.push_back(v);
-	}
+			// loop through all ids on the row
+			while (iss >> id) {
 
-	// if it's a quad
-	if (face.size() == 4) {
-		// push back abc
-		ids.push_back(face[0]);
-		ids.push_back(face[1]);
-		ids.push_back(face[2]);
+			}
 
-		// push back bcd
-		ids.push_back(face[1]);
-		ids.push_back(face[2]);
-		ids.push_back(face[3]);
-	}
+			// if it's a triangle just add it to the ids
+			if (face.size() == 3) {
+				for (float v : face) ids.push_back(v);
+			}
 
+			// if it's a quad
+			if (face.size() == 4) {
+				// push back abc
+				ids.push_back(face[0]);
+				ids.push_back(face[1]);
+				ids.push_back(face[2]);
 
-
+				// push back bcd
+				ids.push_back(face[1]);
+				ids.push_back(face[2]);
+				ids.push_back(face[3]);
+			}
+		}
 }
 // projects the data in a VBO to screenspace and puts it into VBOout
 void projectVBO(VBO& VBOout, VBO const& VBOin, mat4 projMat, const float w, const float h) {

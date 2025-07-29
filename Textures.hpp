@@ -1,8 +1,7 @@
 // contains the texture struct
 
 #pragma once
-#ifndef TEXTURES_HPP
-#define TEXTURES_HPP
+#pragma once
 #include "stb_image.h"
 #include <fstream>
 #include <vector>
@@ -127,5 +126,3 @@ struct texture2d {
     }
 
 };
-
-#endif

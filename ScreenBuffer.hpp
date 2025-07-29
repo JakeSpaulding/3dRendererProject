@@ -1,5 +1,4 @@
-#ifndef SCREENBUFFER_HPP
-#define SCREENBUFFER_HPP
+#pragma once
 #include "VertSettings.hpp"
 #include "Materials.hpp"
 #include "CameraDef.hpp"
@@ -57,7 +56,5 @@ struct fbo {
 
 
 };
-
-#endif // SCREENBUFFER_HPP
 
 

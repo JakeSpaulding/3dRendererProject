@@ -1,5 +1,4 @@
-#ifndef QUATERNION_HPP
-#define QUATERNION_HPP
+#pragma once
 #include "vectors.hpp"
 // contains the quaternion struct
 
@@ -65,7 +64,3 @@ struct quaternion {
         return(v + 2 * w * qv + 2 * qqv);
     }
 };
-
-
-
-#endif

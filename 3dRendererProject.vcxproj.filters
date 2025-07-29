@@ -93,7 +93,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VectorFuncTemplate.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Vector and matrix defs\templates</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

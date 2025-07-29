@@ -1,8 +1,6 @@
 // contains sample offsets for the msaa
 
 #pragma once
-#ifndef MSAASAMPLES_HPP
-#define MSAASAMPLES_HPP
 #include "vectors.hpp"
 #include <vector>
 
@@ -59,5 +57,3 @@ std::vector<vec2> MSAA16xRotated({
     vec2(-0.1875f, -0.3125f),
     vec2(0.5625f, -0.6875f)
     });
-
-#endif

@@ -1,6 +1,4 @@
-#ifndef EULER_HPP
-#define EULER_HPP
-
+#pragma once
 
 // Euler angle definition (consider the angles to be in the YXZ order)
 struct Euler {
@@ -24,7 +22,3 @@ struct Euler {
         return ang[n];
     }
 };
-
-
-
-#endif

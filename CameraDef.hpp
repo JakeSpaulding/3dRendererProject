@@ -1,9 +1,9 @@
-#ifndef CAMERADEF_HPP
-#define CAMERADEF_HPP
+#pragma once
 
-// defines the camera
+// defines the camera structs including orthographic and perspective
 #include "quaternion.hpp"
 #include "matlib.hpp"
+
 // orthographic cam
 struct CameraO {
 	vec3 pos;
@@ -104,4 +104,3 @@ struct CameraP {
 		updateMat();
 	}
 };
-#endif // CAMERADEF_HPP
