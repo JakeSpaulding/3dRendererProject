@@ -3,6 +3,36 @@
 #include "PixelShadeFuncs.hpp"
 #include <array>
 
+// moves the buffer into the frame
+void fbo::buffertFrame() {
+	for (int y = 0; y < screen_height; y++) {
+		// loop through the pixels
+		for (int x = 0; x < screen_width; x++) {
+			const int idf = (y * screen_width + x); // the frame id
+			const int idb = idf * samples; // the buffer id
+			float R = 0, G = 0, B = 0, A = 0; // stores the sum of the colors
+			Zframe[idf] = Zbuffer[idb]; // store the first buffer value
+			// loop through samples
+			for (int s = 0; s < samples; s++) {
+				// add the buffer colors
+				R += static_cast<float>(buffer[idb + s].r);
+				G += static_cast<float>(buffer[idb + s].g);
+				B += static_cast<float>(buffer[idb + s].b);
+				A += static_cast<float>(buffer[idb + s].a);
+
+				// compare the zbuffer and update if it is lower
+				if (Zbuffer[idb + s] < Zframe[idf]) Zframe[idf] = Zbuffer[idb + s];
+			}
+			// average the color values
+			R /= samples, G /= samples, B /= samples, A /= samples;
+			// update frame value by converting to int and rounding
+			frame[idf].r = static_cast<uint8_t>(R + 0.5f);
+			frame[idf].g = static_cast<uint8_t>(G + 0.5f);
+			frame[idf].b = static_cast<uint8_t>(B + 0.5f);
+			frame[idf].a = static_cast<uint8_t>(A + 0.5f);
+		}
+	}
+}
 //draws pixels in the range provided using UV coordinates
 void fbo::drawRange(int xmin, int xmax, int ymin, int ymax, 
 	Vert const& v0, Vert const& v1, Vert const& v2, float area, Material const& material) {
@@ -12,10 +42,9 @@ void fbo::drawRange(int xmin, int xmax, int ymin, int ymax,
 			vec3 p(static_cast<float>(x), static_cast<float>(y), 0.0f); // assign the point we are checking
 			// take barycentric weights
 			vec3 w(
-				static_cast<float>(edgeFunction(v1.pos, v2.pos, p)),
-				static_cast<float>(edgeFunction(v2.pos, v0.pos, p)),
-				static_cast<float>(edgeFunction(v0.pos, v1.pos, p))
-			);
+				edgeFunction(v1.pos, v2.pos, p),
+				edgeFunction(v2.pos, v0.pos, p),
+				edgeFunction(v0.pos, v1.pos, p));
 
 			// check if the point is actually in the triangle
 			if (w[0] >= 0 && w[1] >= 0 && w[2] >= 0) {
@@ -23,7 +52,7 @@ void fbo::drawRange(int xmin, int xmax, int ymin, int ymax,
 				w[0] /= (area * v0.pos[2]), w[1] /= (area * v1.pos[2]), w[2] /= (area * v2.pos[2]); // normalize & apply inverse z values
 
 				// find the z coordinate of our pixel
-				p.z = static_cast<float>(1.0) / (w[0] + w[1] + w[2]);
+				p.z = 1.0f / (w[0] + w[1] + w[2]);
 
 				// ensure it is on the top of the frame
 				if (p.z >= 0 && p.z < Zframe[y * screen_width + x]) {
@@ -42,50 +71,38 @@ void fbo::drawRangeMSAA(int xmin, int xmax, int ymin, int ymax,
 
 	// loop through pixels
 	for (int x = xmin; x <= xmax; x++) {
-		for (	int y = ymin; y <= ymax; y++) {
-			std::vector<vec3> p(samples);
-			std::vector<vec3> w(samples); // stores the weights
-			std::vector<bool> inTri(samples ); // tells if it is in the tri
-			int edgeCheck = 0;
-			const int id = y * screen_width + x;
+		for (int y = ymin; y <= ymax; y++) {
+			int cached = -1;
+			const int id = (y * screen_width + x) * samples;
+
+			// loop through samples
 			for (int s = 0; s < samples; s++) {
-				p.push_back(vec3(
-					static_cast<float>(x) + static_cast<float>(sampleOffset[s].x),
-					static_cast<float>(y) + static_cast<float>(sampleOffset[s].y),
-					0.0f
-				));
-				float w0 = static_cast<float>(edgeFunction(v1.pos, v2.pos, p[s]));
-				float w1 = static_cast<float>(edgeFunction(v2.pos, v0.pos, p[s]));
-				float w2 = static_cast<float>(edgeFunction(v0.pos, v1.pos, p[s]));
+				// save the point value
+				vec3 p(static_cast<float>(x) + sampleOffset[s][0], static_cast<float>(y) + sampleOffset[s][0], 0);
+
+				// calculate barycentric weights
+				float w0 = edgeFunction(v1.pos, v2.pos, p);
+				float w1 = edgeFunction(v2.pos, v0.pos, p);
+				float w2 = edgeFunction(v0.pos, v1.pos, p);
 				
 				// take barycentric weights
-				w.push_back(vec3(w0, w1, w2));
+				vec3 w(w0, w1, w2);
 				// check if it's in the triangle
-				inTri.push_back(w[s][0] >= 0 && w[s][1] >= 0 && w[s][2] >= 0);
-				edgeCheck += inTri[s];
-			}
-			// if it's fully in the triangle we can just shade one sample
-			std::vector<Color> c;
-			if (edgeCheck == samples) {
-				w[0][0] /= (area * v0.pos[2]), w[0][1] /= (area * v1.pos[2]), w[0][2] /= (area * v2.pos[2]); // normalize & apply inverse z values
-				p[0][2] = static_cast<float>(1.0) / (w[0][0] + w[0][1] + w[0][2]); // find z
-				// update the buffers
-				std::fill(Zbuffer.data() + id, Zbuffer.data() + id + samples, p[0][2]);
-				std::fill(buffer.data() + id, buffer.data() + id + samples, shadeBilinear(v0, v1, v2, p[0], w[0], material));// shade from one pixel
-			}
-
-			// if at least one sample is in the triangle we can then continue with the samples
-			else if (edgeCheck > 0){
-				// shade subpixels
-				for (int s = 0; s < samples; s++){
-					// if the sample is in the tri shade it, if not keep the old values
-					if (inTri[s]) {
-						w[s][0] /= (area * v0.pos[2]), w[s][1] /= (area * v1.pos[2]), w[s][2] /= (area * v2.pos[2]); // normalize & apply inverse z values
+				if (w[0] >= 0 && w[1] >= 0 && w[2] >= 0) {
+					// check if we have called the frag shader yet
+					if (cached == -1) {
+						w[0] /= (area * v0.pos[2]), w[1] /= (area * v1.pos[2]), w[2] /= (area * v2.pos[2]); // normalize & apply inverse z values
 						// find the z coordinate of our pixel
-						p[s][2]= static_cast<float>(1.0) / (w[s][0] + w[s][1] + w[s][2]);
+						p[2] = 1.0f / (w[0] + w[1] + w[2]);
 						// set z buffer
-						Zbuffer[id + s] = p[s][2];
+						Zbuffer[id + s] = p[2];
 						buffer[id + s] = shadeBilinear(v0, v1, v2, p[s], w[s], material);
+						cached = id + s;
+					}
+					// add cached values
+					else {
+						Zbuffer[id + s] = Zbuffer[cached];
+						buffer[id + s] = buffer[cached];
 					}
 				}
 			}
@@ -110,6 +127,7 @@ void fbo::drawTri(Vert const& a, Vert const& b, Vert const& c, Material const& m
 	// if we are using msaa
 	if (samples > 1) {
 		drawRangeMSAA(static_cast<int>(floor(xmin)), static_cast<int>(ceil(xmax)), static_cast<int>(floor(ymin)), static_cast<int>(ceil(ymax)), a, b, c, area, material);
+		buffertFrame();
 	}
 	else {
 		drawRange(static_cast<int>(floor(xmin)), static_cast<int>(ceil(xmax)), static_cast<int>(floor(ymin)), static_cast<int>(ceil(ymax)), a, b, c, area, material);
@@ -126,3 +144,5 @@ void fbo::drawMesh(Mesh const& mesh, mat4 const& projMat) {
 		drawTri(NDC[mesh.EB[i]], NDC[mesh.EB[i + 1]], NDC[mesh.EB[i + 2]], mesh.material);
 	}
 }
+
+

@@ -1,8 +1,9 @@
 #include "ScreenBuffer.hpp"
 #include <cstdint>
+#include "MSAAsamples.hpp"
 
-unsigned int Screen_x = 1920;
-unsigned int Screen_y = 1080;
+unsigned int Screen_x = 1280;
+unsigned int Screen_y = 720;
 unsigned int filesize = 3 * Screen_x * Screen_y + 54;
 unsigned int imagesize = 3 * Screen_x * Screen_y;
 
@@ -77,11 +78,10 @@ int main(void) {
     Vert a(vec3(1.0f, 0, -1.0f), vec2(0,0));
     Vert b(vec3(-1.0f, 0, -6.0f), vec2(1,0));
     Vert c(vec3(0, 1.0f, -3.0f), vec2 (0,1));
-
-    texture2d pix;
-    pix.loadTexturePNG("Untitled Drawing.png");
     VBO vb;
     EBO eb;
+
+    texture2d pix(Color(0x0000FFFF));
     Mesh mesh(vb, eb);
     mesh.material.texture = pix;
 
@@ -89,18 +89,18 @@ int main(void) {
     mesh.newTri(a, b, c); // Main triangle
     FBOtBMP(pix.img, "textestout.bmp", pix.w, pix.h);
     // Create a camera looking at the origin from z = 5
-    CameraP camera1(vec3(0, 0, 1), quaternion(0,0,0,1), 90.0f, 1.0f, 10.0f, float(Screen_x) / float(Screen_y));
+    CameraP camera1(vec3(0, 0, 1), quaternion(0,0,0,1), 45.0f, 1.0f, 10.0f, float(Screen_x) / float(Screen_y));
     std::cout << camera1.projMat << "\n";
     CameraO cam2(vec3(0, 0, 1), quaternion(0, 0, 0, 1), 5 ,10, float(Screen_x) / float(Screen_y));
     std::cout << camera1.projMat << "\n";
 
     // Create framebuffer and render
-    fbo screenframe(Screen_x, Screen_y);
+    fbo screenframe(Screen_x, Screen_y, 2, MSAA2xRotated);
     screenframe.drawMesh(mesh, camera1.projMat);
 
     // Write framebuffer to BMP
-    FBOtBMP(screenframe.buffer, "test2.bmp", Screen_x, Screen_y);
-    ZBtBMP(screenframe.Zbuffer, "zbtest.bmp");
+    FBOtBMP(screenframe.frame, "test3.bmp", Screen_x, Screen_y);
+    ZBtBMP(screenframe.Zframe, "zbtest.bmp");
 
     return 0;
 }

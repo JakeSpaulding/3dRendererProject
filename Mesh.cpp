@@ -1,6 +1,7 @@
 #include "geometry.hpp"
 #include <fstream>
 #include <sstream>
+// split an n-gon using fan method
 
 // adds a vertex to the mesh (if it is not already there)
 void Mesh::addVert(Vert const& v) {
@@ -39,6 +40,34 @@ void Mesh::computeNormals() {
 
 // takes an obj file and loads the vertex data
 void Mesh::loadOBJ(const char* filename) {
+	std::vector<float> vp; // store all of the positions
+	std::vector<int> ids; // store all of the iindexes for the tris
+	std::vector <float> vt; // store the texture data
+
+	// handle the face logic (for a quad for now
+	std::vector<int> face;
+	
+	// fill the face up
+
+	// if it's a triangle just add it to the ids
+	if (face.size() == 3) {
+		for (float v : face) ids.push_back(v);
+	}
+
+	// if it's a quad
+	if (face.size() == 4) {
+		// push back abc
+		ids.push_back(face[0]);
+		ids.push_back(face[1]);
+		ids.push_back(face[2]);
+
+		// push back bcd
+		ids.push_back(face[1]);
+		ids.push_back(face[2]);
+		ids.push_back(face[3]);
+	}
+
+
 
 }
 // projects the data in a VBO to screenspace and puts it into VBOout

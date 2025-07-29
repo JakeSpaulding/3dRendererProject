@@ -2,7 +2,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <fstream>
-#include <iostream>
 
 
 // loads a bmp file into the texture buffer
@@ -49,7 +48,7 @@ void texture2d::loadTexturePNG(const char* filename) {
 	h = height;
 	img.resize(w * h);
 
-	for (unsigned int i = 0; i < w * h; ++i) {
+	for (int i = 0; i < w * h; ++i) {
 		img[i].r = data[4 * i + 0];
 		img[i].g = data[4 * i + 1];
 		img[i].b = data[4 * i + 2];

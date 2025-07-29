@@ -1,12 +1,15 @@
 // contains the texture struct
-#pragma once
-#include "stb_image.h"
-#include "geometry.hpp"
-#include <fstream>
 
+#pragma once
+#ifndef TEXTURES_HPP
+#define TEXTURES_HPP
+#include "stb_image.h"
+#include <fstream>
+#include <vector>
+#include <cmath>
 struct Color {
     union {
-        struct { uint8_t r, g, b, a; };
+        struct { uint8_t a,b,g,r; };
         uint32_t color;
     };
     // constructors  
@@ -23,16 +26,25 @@ struct Color {
     }
 }; // define the color vars, each channel is an 8 bit int and the color is stored as a 32 bit int  
 
+// wraps uv coordinates to be normalized
+inline float wrap(float n) {
+    n = fmod(n, 1.0f);
+    if (n < 1) return n + 1.0f;
+    return n;
+}
 
 // stores a texture as a vector of colors with a width and height param enter a color value to make the texture a plain color
 struct texture2d {
-    unsigned int w, h;
+    int w, h;
     std::vector<Color> img; // the texture data
     void loadTexturePNG(const char* filename); // loads the data from the file
     void loadTextureBMP(const char* filename); // loads the data from the file
     
+    texture2d() : w(1),h(1){}
     // default constructor
-    texture2d(unsigned int wi = 1, unsigned int he = 1) : w(wi), h(he){}
+    texture2d(int wi, int he) : w(wi), h(he) {
+        img.resize(w * h);
+    }
     texture2d(Color c) : w(1), h(1) {
         img.resize(1);
         img[0] = c;
@@ -53,19 +65,24 @@ struct texture2d {
     }
     // nearest neighbor
     const Color nearestN(float u, float v) const {
-        unsigned int x = std::min(static_cast<unsigned int>(u * w + 0.5f), w - 1);
-        unsigned int y = std::min(static_cast<unsigned int>(v * h + 0.5f), h - 1); // round coords
+        // wrap the coordinates
+        u = wrap(u);
+        v = wrap(v);
+        unsigned int x = std::min(static_cast<int>(u * w + 0.5f), w - 1);
+        unsigned int y = std::min(static_cast<int>(v * h + 0.5f), h - 1); // round coords
         return img[y * w + x];
     }
     // bilinear filter
     const Color bilinear(float u, float v) const{
+        // wrap coordinates
+        u = wrap(u), v = wrap(v);
         // get the pixel coords
         float x = u * (w - 1), y = v * (h - 1);
 
-        unsigned int x0 = static_cast<unsigned int>(floor(x));
-        unsigned int x1 = std::min(static_cast<unsigned int>(x0 + 1), w - 1);
-        unsigned int y0 = static_cast<unsigned int>(floor(y));
-        unsigned int y1 = std::min(static_cast<unsigned int>(y0 + 1), h - 1);
+        int x0 = static_cast<int>(floor(x));
+        int x1 = std::min(static_cast<int>(x0 + 1), w - 1);
+        int y0 = static_cast<unsigned int>(floor(y));
+        int y1 = std::min(static_cast<int>(y0 + 1), h - 1);
 
         float fx = x - x0;
         float fy = y - y0;
@@ -111,7 +128,4 @@ struct texture2d {
 
 };
 
-texture2d White_texture(Color(0xFFFFFFFF));
-texture2d Red_texture(Color(0xFF0000FF));
-texture2d Green_texture(Color(0x00FF00FF));
-texture2d Blue_texture(Color(0x0000FFFF));
+#endif

@@ -133,6 +133,7 @@
   <ItemGroup>
     <ClInclude Include="CameraDef.hpp" />
     <ClInclude Include="Materials.hpp" />
+    <ClInclude Include="MSAAsamples.hpp" />
     <ClInclude Include="PixelShadeFuncs.hpp" />
     <ClInclude Include="ScreenBuffer.hpp" />
     <ClInclude Include="eulerAngles.hpp" />

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstdint>
 
+
 // the base of the vector struct, allows for access using subscripts
 template <typename Derived, unsigned int N> struct Vbase { // N is the size of the vector
     float data[N];

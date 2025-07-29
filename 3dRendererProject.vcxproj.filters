@@ -89,5 +89,8 @@
     <ClInclude Include="VertSettings.hpp">
       <Filter>Header Files\Geometry defs</Filter>
     </ClInclude>
+    <ClInclude Include="MSAAsamples.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
