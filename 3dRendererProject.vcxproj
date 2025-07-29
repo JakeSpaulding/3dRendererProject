@@ -143,6 +143,7 @@
     <ClInclude Include="matrixTemplate.hpp" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Textures.hpp" />
+    <ClInclude Include="VectorFuncTemplate.hpp" />
     <ClInclude Include="vectors.hpp" />
     <ClInclude Include="vectorTemplate.hpp" />
     <ClInclude Include="VertSettings.hpp" />

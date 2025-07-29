@@ -91,7 +91,6 @@ struct Mbase {
         }
         return(tmp);
     }
-
     // matrix-matrix addition
     Mbase operator+(Mbase const& m2) const {
         Mbase tmp = Mbase();
@@ -102,9 +101,6 @@ struct Mbase {
         }
         return(tmp);
     }
-
-
-
     // matrix constant multiplication
     Mbase operator*(float n) const{
         Mbase tmp = Mbase();

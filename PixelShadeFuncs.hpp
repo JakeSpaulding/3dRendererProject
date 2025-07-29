@@ -18,13 +18,13 @@ Color shadeColor(Vert const& v0, Vert const& v1, Vert const& v2, vec3 const& p, 
 // shades a pixel using UV attributes and bilinear filtering
 Color shadeBilinear(Vert const& v0, Vert const& v1, Vert const& v2, vec3 const& p, vec3 const& w, Material material) {
 	// interpolate
-	vec2 UV(baryInterpolate(w, v0.UV, v1.UV, v2.UV, p.z));
+	vec2 UV(baryInterpolate(w, v0.UV, v1.UV, v2.UV, p[2]));
 	// get filtered pixel
 	return material.texture.bilinear(UV.u, UV.v);
 }
 
 // shades a pixel using nearest neighbor filtering
 Color shadeNearestN(Vert const& v0, Vert const& v1, Vert const& v2, vec3 const& p, vec3 const& w, Material material) {
-	vec2 UV(baryInterpolate(w, v0.UV, v1.UV, v2.UV, p.z));
+	vec2 UV(baryInterpolate(w, v0.UV, v1.UV, v2.UV, p[2]));
 	return material.texture.nearestN(UV.u, UV.v);
 }

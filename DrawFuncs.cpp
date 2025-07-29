@@ -52,12 +52,12 @@ void fbo::drawRange(int xmin, int xmax, int ymin, int ymax,
 				w[0] /= (area * v0.pos[2]), w[1] /= (area * v1.pos[2]), w[2] /= (area * v2.pos[2]); // normalize & apply inverse z values
 
 				// find the z coordinate of our pixel
-				p.z = 1.0f / (w[0] + w[1] + w[2]);
+				p[2] = 1.0f / (w[0] + w[1] + w[2]);
 
 				// ensure it is on the top of the frame
-				if (p.z >= 0 && p.z < Zframe[y * screen_width + x]) {
+				if (p[2] >= 0 && p[2] < Zframe[y * screen_width + x]) {
 					// update our frame buffers
-					Zframe[y * screen_width + x] = p.z;
+					Zframe[y * screen_width + x] = p[2];
 					frame[y * screen_width + x] = shadeBilinear(v0, v1, v2, p, w, material);
 				}
 			}
