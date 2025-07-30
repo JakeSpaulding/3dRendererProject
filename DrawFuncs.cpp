@@ -1,13 +1,12 @@
 #pragma once
 #include "ScreenBuffer.hpp"
 #include "PixelShadeFuncs.hpp"
-#include <array>
 
 // moves the buffer into the frame
 void fbo::buffertFrame() {
-	for (int y = 0; y < screen_height; y++) {
+	for (unsigned int y = 0; y < screen_height; y++) {
 		// loop through the pixels
-		for (int x = 0; x < screen_width; x++) {
+		for (unsigned int x = 0; x < screen_width; x++) {
 			const int idf = (y * screen_width + x); // the frame id
 			const int idb = idf * samples; // the buffer id
 			float R = 0, G = 0, B = 0, A = 0; // stores the sum of the colors
@@ -115,10 +114,10 @@ void fbo::drawRangeMSAA(int xmin, int xmax, int ymin, int ymax,
 void fbo::drawTri(Vert const& a, Vert const& b, Vert const& c, Material const& material) {
 	// compute bbox
 	// Replace std::fminf with std::min and std::fmaxf with std::max  
-	float xmin = std::min(std::min(a.pos[0], b.pos[0]), c.pos[0]);
-	float xmax = std::max(std::max(a.pos[0], b.pos[0]), c.pos[0]);
-	float ymin = std::min(std::min(a.pos[1], b.pos[1]), c.pos[1]);
-	float ymax = std::max(std::max(a.pos[1], b.pos[1]), c.pos[1]);
+	float xmin = std::max(std::min(std::min(a.pos[0], b.pos[0]), c.pos[0]), 0.0f);
+	float xmax = std::min(std::max(std::max(a.pos[0], b.pos[0]), c.pos[0]),screen_width * 1.0f - 1.0f);
+	float ymin = std::max(std::min(std::min(a.pos[1], b.pos[1]), c.pos[1]), 0.0f);
+	float ymax = std::min(std::max(std::max(a.pos[1], b.pos[1]), c.pos[1]),screen_height * 1.0f - 1.0f);
 
 
 	// cache the area
@@ -137,11 +136,15 @@ void fbo::drawTri(Vert const& a, Vert const& b, Vert const& c, Material const& m
 
 void fbo::drawMesh(Mesh const& mesh, mat4 const& projMat) {
 	// project the points
-	VBO NDC;
-	projectVBO(NDC, mesh.VB, projMat, screen_width, screen_height);
+	std::vector<vec3> NDC;
+	projectVBO(NDC, mesh.VBO, projMat, screen_width, screen_height);
 	// loop through the triangles (this can be multithreaded)
-	for (int i = 0; i < mesh.EB.size(); i += 3) {
-		drawTri(NDC[mesh.EB[i]], NDC[mesh.EB[i + 1]], NDC[mesh.EB[i + 2]], mesh.material);
+	for (int i = 0; i < mesh.VEBO.size(); i += 3) {
+		// initialize Vert structs to make life easier
+		Vert a(NDC[mesh.VEBO[i]], mesh.UV[mesh.UVEBO[i]], mesh.Normals[mesh.NEBO[i]]);
+		Vert b(NDC[mesh.VEBO[i + 1]], mesh.UV[mesh.UVEBO[i + 1]], mesh.Normals[mesh.NEBO[i + 1]]);
+		Vert c(NDC[mesh.VEBO[i + 2]], mesh.UV[mesh.UVEBO[i + 2]], mesh.Normals[mesh.NEBO[i + 2]]);
+		drawTri(a, b, c, mesh.material);
 	}
 }
 
