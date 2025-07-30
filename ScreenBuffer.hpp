@@ -25,7 +25,7 @@ struct fbo {
 	fbo(uint32_t sw, uint32_t sh, uint8_t upr = 1, std::vector<vec2> sam = { vec2(0,0) }) : screen_height(sh), samples(upr), screen_width(sw) {
 		if (samples > 1) {
 			buffer.resize(screen_height * screen_width * samples); // allocate size
-			std::fill(&buffer[0], &buffer[0] + buffer.size(), 0); // fill with zeros
+			std::fill(&buffer[0].color, &buffer[0].color + buffer.size(), 0); // fill with zeros
 			Zbuffer.resize(screen_height * screen_width * samples);
 			std::fill(&Zbuffer[0], &Zbuffer[0] + Zbuffer.size(), 1.0f);
 			sampleOffset.resize(samples);
@@ -34,7 +34,7 @@ struct fbo {
 		Zframe.resize(screen_height * screen_width ); // allocate size
 		frame.resize(screen_height * screen_width); // allocate size
 		
-		std::fill(&frame[0], &frame[0] + frame.size(), 0); // fill with zeros
+		std::fill(&frame[0].color, &frame[0].color + frame.size(), 0); // fill with zeros
 		std::fill(&Zframe[0], &Zframe[0] + Zframe.size(), 1.0f);
 	}
 

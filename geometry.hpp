@@ -33,42 +33,30 @@ struct Vert {
 
     // default constructor  
 
-    Vert(vec3 p, vec2 tx, vec3 No = vec3(0,0,0)) : pos(vec3(p[0], p[1], p[2])), UV(vec2(tx[0], tx[1])), N(No) {}
+    Vert(vec3 p, vec2 tx) : pos(vec3(p[0], p[1], p[2])), UV(vec2(tx[0], tx[1])), N(vec3(0, 0, 0)) {}
 #endif  
 
 };  
-
-// takes in an array of points and transforms them
+// define a vertex buffer  
+typedef std::vector<Vert> VBO;  
+// define an index array  
+typedef std::vector<uint32_t> EBO;  
+void projectVBO(VBO& VBOout, VBO const& VBOin, mat4 projMat, const float w, const float h);
 struct Mesh {  
-    std::vector <unsigned int> VEBO;
-    std::vector <vec3> VBO;
-    std::vector <vec2> UV;
-    std::vector <unsigned int> UVEBO;
-    std::vector <vec3> Normals;
-    std::vector <unsigned int> NEBO;
-    std::vector <Vert> Verts; // allows the storage of vert structs instead of attribute buffers (Depricated)
-    std::vector <unsigned int> VertEBO;
+    VBO VB; // vertex buffer  
+    EBO EB; // index buffer  
     Material material; // material data
 
-    // computes vertex normals for the verts buffer
-    void computeNormalsVertsBuffer();
-    // computes normals for the normal buffer
+    // computes vertex normals
     void computeNormals();
 
+    Mesh(VBO v, EBO id) : VB(v), EB(id) { computeNormals(); }
     Mesh() {}
 
     void loadOBJ(const char* filename); // loads an obj 3d model
 
-    // maps all uv to 0 0 if there are no coordinates
-    void fillUV();
-
-    // loads VBO data
-    void loadVBO(std::vector <float> V) {
-        VBO.resize(V.size());
-        std::copy(V.data(), V.data() + V.size(), VBO.data());
-    }
     // adds the vertex to the buffers  
-    void addVert(Vert const& v, bool takingNormal = 0);
+    void addVert(Vert const& v);
 
     // takes vertex data to add a new triangle  
     void newTri(Vert const& a, Vert const& b, Vert const& c) {  

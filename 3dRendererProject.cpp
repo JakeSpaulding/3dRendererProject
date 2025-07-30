@@ -1,4 +1,3 @@
-#pragma once
 #include "ScreenBuffer.hpp"
 #include <cstdint>
 #include "MSAAsamples.hpp"
@@ -79,22 +78,24 @@ int main(void) {
     Vert a(vec3(1.0f, 0, -1.0f), vec2(0,0));
     Vert b(vec3(-1.0f, 0, -6.0f), vec2(1,0));
     Vert c(vec3(0, 1.0f, -3.0f), vec2 (0,1));
+    VBO vb;
+    EBO eb;
 
-    texture2d pix(Color(0xFF0000FF));
-    Mesh mesh;
+    texture2d pix(Color(0x0000FFFF));
+    Mesh mesh(vb, eb);
     mesh.material.texture = pix;
 
     // Add triangles to the mesh
-    mesh.loadOBJ("beast.obj");
+    mesh.newTri(a, b, c); // Main triangle
     FBOtBMP(pix.img, "textestout.bmp", pix.w, pix.h);
     // Create a camera looking at the origin from z = 5
-    CameraP camera1(vec3(0, 0, 800), quaternion(0,0,0,1), 150.0f, 1.0f, 1000.0f, float(Screen_x) / float(Screen_y));
+    CameraP camera1(vec3(0, 0, 1), quaternion(0,0,0,1), 45.0f, 1.0f, 10.0f, float(Screen_x) / float(Screen_y));
     std::cout << camera1.projMat << "\n";
     CameraO cam2(vec3(0, 0, 1), quaternion(0, 0, 0, 1), 5 ,10, float(Screen_x) / float(Screen_y));
     std::cout << camera1.projMat << "\n";
-    mesh.computeNormals();
+
     // Create framebuffer and render
-    fbo screenframe(Screen_x, Screen_y);
+    fbo screenframe(Screen_x, Screen_y, 2, MSAA2xRotated);
     screenframe.drawMesh(mesh, camera1.projMat);
 
     // Write framebuffer to BMP
