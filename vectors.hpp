@@ -81,6 +81,8 @@ struct vec3 {
         float data[3];
         struct { float x, y, z; };
         struct { float r, g, b; };
+        struct { float yaw, pitch, roll; };
+        struct { float ry, rx, rz; };
     };
 
     // Constructors

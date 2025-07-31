@@ -7,19 +7,21 @@
 // orthographic cam
 struct CameraO {
 	vec3 pos;
+	float w;
+	float h;
 	quaternion rot;
-	float aspect;
 	float scale; // how big the viewbox is
 	float zfar; // how far the render distance is
 	mat4 projMat;
 
 	// updates the projection matrix with the new data
 	void updateMat(void) {
-		projMat = orthoSpaceTransMat(scale, zfar, aspect) * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
+		projMat = NDCtSc(w,h)*orthoSpaceTransMat(scale, zfar, w/h) * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
 	}
 
 	// creates a camera at position p with rotation q and generates the projection matrix
-	CameraO(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1), float s = 1, float f = 100, float a = 16 / 9) : pos(vec3(p[0],p[1],p[2])), rot(r), zfar(f), aspect(a), scale(s) {
+	CameraO(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1), float s = 1, float f = 100, unsigned int wi = 1920, unsigned int he = 1080) 
+		: pos(vec3(p[0],p[1],p[2])), rot(r), zfar(f), scale(s),w(float(wi)),h(float(he)) {
 		// constuct the matricies
 		updateMat();
 	}
@@ -33,12 +35,16 @@ struct CameraO {
 		pos = np;
 		updateMat();
 	}
-	// update the aspect ratio and matrix
-	void setAspectRatio(const float a) {
-		aspect = a;
+	// update the pixel height
+	void setHeight(float a) {
+		h = a;
 		updateMat();
 	}
-
+	// update the pixel width
+	void setwidth(float a) {
+		w = a;
+		updateMat();
+	}
 	// update the render distance
 	void setZFar(const float f) {
 		zfar = f;
@@ -55,19 +61,21 @@ struct CameraO {
 struct CameraP {
 	vec3 pos;
 	quaternion rot;
+	float w;
+	float h;
 	float fov;
-	float aspect;
 	float znear;
 	float zfar;
 	mat4 projMat;
 
 	// updates the projection matrix with the new data
 	void updateMat(void) {
-		projMat = perspectiveProj(fov, znear, zfar, aspect) * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
+		projMat = NDCtSc(w,h)*perspectiveProj(fov, znear, zfar, w/h) * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
 	}
 
 	// creates a camera at position p with rotation q and generates the projection matrix
-	CameraP(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1), float ang = 100, float n = 1, float f = 100, float a = 16 / 9) : pos(vec3(p[0], p[1], p[2])), znear(n), rot(r), zfar(f), aspect(a), fov(ang) {
+	CameraP(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1), float ang = 100, float n = 1, float f = 100, unsigned int wi = 1920, unsigned int he = 1080) 
+		: pos(vec3(p[0], p[1], p[2])), znear(n), rot(r), zfar(f), fov(ang), w(float(wi)), h(float(he)) {
 		// constuct the matricies
 		updateMat();
 	}
@@ -83,9 +91,14 @@ struct CameraP {
 		pos = np;
 		updateMat();
 	}
-	// update the aspect ratio and matrix
-	void setAspectRatio(const float a) {
-		aspect = a;
+	// update the pixel height
+	void setHeight(float a) {
+		h = a;
+		updateMat();
+	}
+	// update the pixel width
+	void setwidth(float a) {
+		w = a;
 		updateMat();
 	}
 	// update the fov ( ind degrees

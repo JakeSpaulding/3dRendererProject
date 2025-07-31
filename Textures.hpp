@@ -5,6 +5,7 @@
 #include "stb_image.h"
 #include <fstream>
 #include <vector>
+#include <iostream>
 #include <cmath>
 struct Color {
     union {
@@ -28,7 +29,7 @@ struct Color {
 // wraps uv coordinates to be normalized
 inline float wrap(float n) {
     n = fmod(n, 1.0f);
-    if (n < 1) return n + 1.0f;
+    if (n < 0) return n + 1.0f;
     return n;
 }
 
@@ -87,14 +88,11 @@ struct texture2d {
         float fy = y - y0;
 
         // Helper to get pixel
-        auto get = [&](unsigned int xx, unsigned int yy) -> Color {
-            return img[yy * w + xx];
-            };
 
-        Color c00 = get(x0, y0);
-        Color c10 = get(x1, y0);
-        Color c01 = get(x0, y1);
-        Color c11 = get(x1, y1);
+        Color c00 = getPix(x0, y0);
+        Color c10 = getPix(x1, y0);
+        Color c01 = getPix(x0, y1);
+        Color c11 = getPix(x1, y1);
 
         // Interpolate each channel
         Color result;
@@ -122,6 +120,7 @@ struct texture2d {
             (1 - fx) * fy * c01.a +
             fx * fy * c11.a
             );
+       // std::cout << result.color << "\n";
         return result;
     }
 

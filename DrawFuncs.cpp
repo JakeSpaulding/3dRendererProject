@@ -40,11 +40,13 @@ void fbo::drawRange(int xmin, int xmax, int ymin, int ymax,
 
 			vec3 p(static_cast<float>(x), static_cast<float>(y), 0.0f); // assign the point we are checking
 			// take barycentric weights
+			//std::cout << "\nv0: " << v0.pos << v0.UV << "\nv1: " << v1.pos << v1.UV << "\nv2: " << v2.pos << v2.UV << " P: " << p;
+			//std::cout << "edge func: " << edgeFunction(v1.pos, v2.pos, p);
 			vec3 w(
 				edgeFunction(v1.pos, v2.pos, p),
 				edgeFunction(v2.pos, v0.pos, p),
 				edgeFunction(v0.pos, v1.pos, p));
-
+			//std::cout << "\nv0: "<< v0.pos<<v0.UV<<"\nv1: "<<v1.pos<<v1.UV<<"\nv2: "<<v2.pos<<v2.UV<<"weights:  "<< w<<"\n";
 			// check if the point is actually in the triangle
 			if (w[0] >= 0 && w[1] >= 0 && w[2] >= 0) {
 
@@ -86,6 +88,7 @@ void fbo::drawRangeMSAA(int xmin, int xmax, int ymin, int ymax,
 				
 				// take barycentric weights
 				vec3 w(w0, w1, w2);
+				//::cout << "weights: " << w;
 				// check if it's in the triangle
 				if (w[0] >= 0 && w[1] >= 0 && w[2] >= 0) {
 					// check if we have called the frag shader yet
@@ -137,7 +140,7 @@ void fbo::drawTri(Vert const& a, Vert const& b, Vert const& c, Material const& m
 void fbo::drawMesh(Mesh const& mesh, mat4 const& projMat) {
 	// project the points
 	std::vector<vec3> NDC;
-	projectVBO(NDC, mesh.VBO, projMat, screen_width, screen_height);
+	projectVBO(NDC, mesh.VBO, projMat);
 	// loop through the triangles (this can be multithreaded)
 	for (int i = 0; i < mesh.VEBO.size(); i += 3) {
 		// initialize Vert structs to make life easier

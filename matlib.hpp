@@ -52,7 +52,7 @@ inline mat3 Rx(float a) {
     float c = cos(a * static_cast<float>(M_PI) / 180.0f);
     return mat3(
         1, 0, 0,
-        0, c, -s,
+        0, c,-s,
         0, s, c );
 }
 // rotation about the y axis (pitch)
@@ -69,8 +69,19 @@ inline mat3 Ry(float a) {
 inline mat4 vulkanAxisRotate() {
     return mat4(
         1, 0, 0, 0,
-        0, -1, 0, 0,
-        0, 0, -1, 0,
+        0,-1, 0, 0,
+        0, 0,-1, 0,
+        0, 0, 0, 1);
+}
+
+// converts from NDC to pixel coordiantes
+inline mat4 NDCtSc(float w, float h) {
+    float x = static_cast<float> (w / 2.0f);
+    float y = static_cast<float> (h / 2.0f);
+    return mat4(
+        x, 0, 0, x,
+        0, y, 0, y,
+        0, 0, 1, 0,
         0, 0, 0, 1);
 }
 
@@ -114,6 +125,96 @@ inline mat4 makeVulkanOrtho(float l, float r, float b, float t, float n, float f
     );
 }
 
+// converts an euler angle to a quaternion
+inline quaternion etq(vec3 const& v) {
+    // Convert degrees to radians
+    float yaw = v.yaw * static_cast<float>(M_PI) / 180.0f;
+    float pitch = v.pitch * static_cast<float>(M_PI) / 180.0f;
+    float roll = v.roll * static_cast<float>(M_PI) / 180.0f;
+
+    // Compute half angles
+    float cy = cos(yaw * 0.5f);
+    float sy = sin(yaw * 0.5f);
+    float cp = cos(pitch * 0.5f);
+    float sp = sin(pitch * 0.5f);
+    float cr = cos(roll * 0.5f);
+    float sr = sin(roll * 0.5f);
+
+    // Yaw-Pitch-Roll (Y-X-Z) order
+    quaternion q;
+    q.w = cr * cp * cy + sr * sp * sy;
+    q.x = sr * cp * cy - cr * sp * sy;
+    q.y = cr * sp * cy + sr * cp * sy;
+    q.z = cr * cp * sy - sr * sp * cy;
+    return q;
+}
+// converts eluer to quaternion
+inline quaternion etq(float yaw, float pitch, float roll) {
+    // Convert degrees to radians
+    yaw = yaw * static_cast<float>(M_PI) / 180.0f;
+    pitch = pitch * static_cast<float>(M_PI) / 180.0f;
+    roll = roll * static_cast<float>(M_PI) / 180.0f;
+
+    // Compute half angles
+    float cy = cos(yaw * 0.5f);
+    float sy = sin(yaw * 0.5f);
+    float cp = cos(pitch * 0.5f);
+    float sp = sin(pitch * 0.5f);
+    float cr = cos(roll * 0.5f);
+    float sr = sin(roll * 0.5f);
+
+    // Yaw-Pitch-Roll (Y-X-Z) order
+    quaternion q;
+    q.w = cr * cp * cy + sr * sp * sy;
+    q.x = sr * cp * cy - cr * sp * sy;
+    q.y = cr * sp * cy + sr * cp * sy;
+    q.z = cr * cp * sy - sr * sp * cy;
+    return q;
+}
+
+// Converts a quaternion to Euler angles (yaw, pitch, roll) in degrees.
+// Returns a vec3: x = yaw, y = pitch, z = roll.
+inline vec3 quaternionToEuler(const quaternion& q) {
+    // Extract the values from quaternion
+    float x = q.x, y = q.y, z = q.z, w = q.w;
+
+    // Yaw (Y axis rotation)
+    float siny_cosp = 2.0f * (w * y + z * x);
+    float cosy_cosp = 1.0f - 2.0f * (y * y + x * x);
+    float yaw = std::atan2(siny_cosp, cosy_cosp);
+
+    // Pitch (X axis rotation)
+    float sinp = 2.0f * (w * x - y * z);
+    float pitch;
+    if (std::abs(sinp) >= 1)
+        pitch = std::copysign(static_cast<float>(M_PI) / 2.0f, sinp); // use 90 degrees if out of range
+    else
+        pitch = std::asin(sinp);
+
+    // Roll (Z axis rotation)
+    float sinr_cosp = 2.0f * (w * z + x * y);
+    float cosr_cosp = 1.0f - 2.0f * (z * z + x * x);
+    float roll = std::atan2(sinr_cosp, cosr_cosp);
+
+    // Convert radians to degrees
+    return vec3(
+        yaw * 180.0f / static_cast<float>(M_PI),
+        pitch * 180.0f / static_cast<float>(M_PI),
+        roll * 180.0f / static_cast<float>(M_PI)
+    );
+}
+
+// converts angle axis to quaternion (angle axis is in vec4)
+inline quaternion aatq(vec4 const& v) {
+    float ang = v.w * float(M_PI) / 180.0f;
+    quaternion q;
+    q.x = v.x * sin(ang / 2);
+    q.y = v.y * sin(ang / 2);
+    q.z = v.z * sin(ang / 2);
+    q.w = cos(ang / 2);
+    return q;
+}
+
 // converts a quaternion to a rotation matrix4
 inline mat4 qtm4(quaternion const& q) {
     return mat4(
@@ -133,8 +234,28 @@ inline vec3 Rq(vec3 const& v, quaternion q) {
     return q.rotate(v);
 }
 
+// converts euler angles to a mat3 rotation matrix
+inline mat3 etm3(vec3 const& v) {
+    return(qtm3(etq(v)));
+}
+
+// converts euler angles to a mat3
+inline mat3 etm3(float ry, float rx, float rz) {
+    return(qtm3(etq(ry, rx, rz)));
+}
+// converts euler angles to a mat4
+inline mat4 etm4(vec3 const& v) {
+    return mat4(etm3(v));
+}
+// converts euler angles to a mat4
+inline mat4 eulertM4(float ry, float rx, float rz) {
+    return mat4(etm3(ry, rx, rz));
+}
+
+
 // it's the good old lerp
 template <typename T>
 T lerp(const T& a, const T& b, float t){
     return a * (1 - t) + b * t;
 }   
+

@@ -55,19 +55,19 @@ void Mesh::computeNormals() {
 inline void loadFaceBuffer(std::vector<unsigned int> const& Fin, std::vector<unsigned int>& Fout) {
 	// if it's a tri just load it
 	if (Fin.size() == 3) {
-		for (unsigned int v : Fin) Fout.push_back(v);
+		for (unsigned int v : Fin) Fout.push_back(v - 1);
 	}
 
 	// if it's a quad load tri abc and tri bcd
 	if (Fin.size() == 4) {
 		// tri abc
-		Fout.push_back(Fin[0]);
-		Fout.push_back(Fin[1]);
-		Fout.push_back(Fin[2]);
+		Fout.push_back(Fin[0] - 1);
+		Fout.push_back(Fin[1] - 1);
+		Fout.push_back(Fin[2] - 1);
 		// tri bcd
-		Fout.push_back(Fin[1]);
-		Fout.push_back(Fin[2]);
-		Fout.push_back(Fin[3]);
+		Fout.push_back(Fin[1] - 1);
+		Fout.push_back(Fin[2] - 1);
+		Fout.push_back(Fin[3] - 1);
 	}
 }
 
@@ -110,10 +110,11 @@ void Mesh::loadOBJ(const char* filename) {
 			std::vector<unsigned int> faceUV; // store the face UVs
 			std::vector<unsigned int> faceN; // store the face Normals
 			std::string id; // will store the current id
-			std::vector<unsigned int> vertmp; // temporarlily stores all of the indexes for the vertex attributes of one of the verticies
+			
 
 			// loop through all ids on the row
 			while (iss >> id) {
+				std::vector<unsigned int> vertmp; // temporarlily stores all of the indexes for the vertex attributes of one of the verticies
 				std::replace(id.begin(), id.end(), '/', ' '); // replace all slashes with spaces
 				std::istringstream viss(id); // turn the current vert into a stream
 				std::string tmp;
