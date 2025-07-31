@@ -2,9 +2,10 @@
 #include "ScreenBuffer.hpp"
 #include <cstdint>
 #include "MSAAsamples.hpp"
+#include <chrono>
 
-unsigned int Screen_x = 1080;
-unsigned int Screen_y = 1920;
+int Screen_x = 3840;
+int Screen_y = 2160;
 unsigned int filesize = 3 * Screen_x * Screen_y + 54;
 unsigned int imagesize = 3 * Screen_x * Screen_y;
 
@@ -79,26 +80,39 @@ int main(void) {
     Vert a(vec3(1.0f, 0, -1.0f), vec2(0,0));
     Vert b(vec3(-1.0f, 0, -6.0f), vec2(1,0));
     Vert c(vec3(0, 1.0f, -3.0f), vec2 (0,1));
-
     texture2d pix;
     pix.loadTexturePNG("Instagram_icon.png");
     Mesh mesh;
     mesh.material.texture = pix;
 
     // Add triangles to the mesh
-    mesh.loadOBJ("beast.obj");
-    FBOtBMP(pix.img, "textestout.bmp", pix.w, pix.h);
+    mesh.loadOBJ("beast.obj"); 
+
     // Create a camera looking at the origin from z = 5
     CameraP camera1(vec3(0, 0, 800), quaternion(0,0,0,1), 150.0f, 1.0f, 1000.0f, Screen_x, Screen_y);
-    std::cout << camera1.projMat << "\n";
     CameraO cam2(vec3(0, 100, 150), quaternion(0, 0, 0, 1), 150, 300, Screen_x, Screen_y);
-    std::cout << cam2.projMat << "\n";
-    projectVBO(mesh.VBO, mesh.VBO, qtm4(quaternion(0, 0, 1, 0)));
     mesh.computeNormals();
-    // Create framebuffer and render
-    fbo screenframe(Screen_x, Screen_y);
-    screenframe.drawMesh(mesh, cam2.projMat);
 
+    // Create framebuffer and render
+    fbo screenframe(Screen_x, Screen_y, 16, MSAA16xRotated);
+
+    // unthreaded
+    auto start = chrono::high_resolution_clock::now();
+    //screenframe.drawMesh(mesh, cam2.projMat);
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    // Print the duration
+    std::cout << "st time: " << duration.count() << " milliseconds" << std::endl;
+
+    // threaded
+    start = chrono::high_resolution_clock::now();
+    screenframe.drawMeshThreaded(mesh, cam2.projMat, 256);
+    end = chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    // Print the duration
+    std::cout << "multithread time: " << duration.count() << " milliseconds" << std::endl;
     // Write framebuffer to BMP
     FBOtBMP(screenframe.frame, "test3.bmp", Screen_x, Screen_y);
     ZBtBMP(screenframe.Zframe, "zbtest.bmp");

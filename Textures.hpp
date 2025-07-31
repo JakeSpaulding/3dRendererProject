@@ -50,17 +50,17 @@ struct texture2d {
         img[0] = c;
     }
     // overload subscript
-    Color operator[](unsigned int n) { 
+    Color operator[](int n) { 
         return img[n]; 
     }
-    const Color operator[](unsigned int n) const {
+    const Color operator[](int n) const {
         return img[n];
     }
     // returns the pixel at the desired coordinates
-    Color getPix(unsigned int u, unsigned int v) {
+    Color getPix(int u, unsigned int v) {
         return img[v * w + u];
     }
-    const Color getPix(unsigned int u, unsigned int v) const {
+    const Color getPix(int u, int v) const {
         return img[v * w + u];
     }
     // nearest neighbor
@@ -68,8 +68,8 @@ struct texture2d {
         // wrap the coordinates
         u = wrap(u);
         v = wrap(v);
-        unsigned int x = std::min(static_cast<int>(u * w + 0.5f), w - 1);
-        unsigned int y = std::min(static_cast<int>(v * h + 0.5f), h - 1); // round coords
+        int x = std::min(static_cast<int>(u * w + 0.5f), w - 1);
+        int y = std::min(static_cast<int>(v * h + 0.5f), h - 1); // round coords
         return img[y * w + x];
     }
     // bilinear filter

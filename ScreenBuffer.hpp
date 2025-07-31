@@ -5,8 +5,8 @@
 #include "TriCastLib.hpp"
 
 struct fbo {
-	uint32_t screen_width;
-	uint32_t screen_height;
+	int screen_width;
+	int screen_height;
 	uint8_t samples;
 	std::vector<vec2> sampleOffset;
 	std::vector<Color> buffer;// initialize the buffer
@@ -22,7 +22,7 @@ struct fbo {
 	}
 
 	// constructor width height and samples and sample offset
-	fbo(uint32_t sw, uint32_t sh, uint8_t upr = 1, std::vector<vec2> sam = { vec2(0,0) }) : screen_height(sh), samples(upr), screen_width(sw) {
+	fbo(int sw, int sh, uint8_t upr = 1, std::vector<vec2> sam = { vec2(0,0) }) : screen_height(sh), samples(upr), screen_width(sw) {
 		if (samples > 1) {
 			buffer.resize(screen_height * screen_width * samples); // allocate size
 			std::fill(&buffer[0], &buffer[0] + buffer.size(), 0); // fill with zeros
@@ -43,7 +43,8 @@ struct fbo {
 	// draws the range with MSAA
 	void drawRangeMSAA(int xmin, int xmax, int ymin, int ymax, Vert const& v0, Vert const& v1, Vert const& v2, float area, 
 		Material const& material);
-
+	// draws a tile of the 
+	void drawTile(Mesh const& mesh, vector<vec3> const& scVBO, int xmin, int xmax, int ymin, int ymax);
 	//draws pixels in the range provided
 	void drawRange(int xmin, int xmax, int ymin, int ymax, 
 		Vert const& v0, Vert const& v1, Vert const& v2, float area, Material const& material);
@@ -53,7 +54,8 @@ struct fbo {
 
 	// draws the mesh of an array of vertexes and indexes based off of an inputted camera
 	void drawMesh(Mesh const& mesh, mat4 const& projMat);
-
+	// draws the mesh multithreaded style
+	void drawMeshThreaded(Mesh const& mesh, mat4 const& projMat, int tileSize = 32);
 
 };
 

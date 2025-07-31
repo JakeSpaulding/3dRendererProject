@@ -4,7 +4,7 @@
 // applies a matrix transform to all points in a vbo and outputs it to vboout
 inline void projectVBO(std::vector<vec3>& VBOout, std::vector<vec3> const& VBOin, mat4 projMat) {
 	VBOout.resize(VBOin.size());
-	for (int i = VBOin.size() - 1; i << VBOin.size() >= 0; i--) {
+	for (int i = VBOin.size() - 1; i >= 0; i--) {
 		VBOout[i] = projMat * VBOin[i]; // project it
 	}
 }
