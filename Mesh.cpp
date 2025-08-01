@@ -65,7 +65,7 @@ inline void loadFaceBuffer(std::vector<unsigned int> const& Fin, std::vector<uns
 		Fout.push_back(Fin[1] - 1);
 		Fout.push_back(Fin[2] - 1);
 		// tri bcd
-		Fout.push_back(Fin[1] - 1);
+		Fout.push_back(Fin[0] - 1);
 		Fout.push_back(Fin[2] - 1);
 		Fout.push_back(Fin[3] - 1);
 	}

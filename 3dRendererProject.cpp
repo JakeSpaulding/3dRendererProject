@@ -4,8 +4,8 @@
 #include "MSAAsamples.hpp"
 #include <chrono>
 
-int Screen_x = 3840;
-int Screen_y = 2160;
+int Screen_x = 1920;
+int Screen_y = 1080;
 unsigned int filesize = 3 * Screen_x * Screen_y + 54;
 unsigned int imagesize = 3 * Screen_x * Screen_y;
 
@@ -80,17 +80,18 @@ int main(void) {
     Vert a(vec3(1.0f, 0, -1.0f), vec2(0,0));
     Vert b(vec3(-1.0f, 0, -6.0f), vec2(1,0));
     Vert c(vec3(0, 1.0f, -3.0f), vec2 (0,1));
-    texture2d pix;
-    pix.loadTexturePNG("Instagram_icon.png");
+    texture2d pix(0xff0000ff);
+    //pix.loadTexturePNG("Instagram_icon.png");
     Mesh mesh;
     mesh.material.texture = pix;
 
     // Add triangles to the mesh
-    mesh.loadOBJ("beast.obj"); 
-
+    mesh.loadOBJ("xyzrgb_dragon.obj"); 
+    projectVBO(mesh.VBO, mesh.VBO, etm4(vec3(0, -25, 0)));
     // Create a camera looking at the origin from z = 5
     CameraP camera1(vec3(0, 0, 800), quaternion(0,0,0,1), 150.0f, 1.0f, 1000.0f, Screen_x, Screen_y);
     CameraO cam2(vec3(0, 100, 150), quaternion(0, 0, 0, 1), 150, 300, Screen_x, Screen_y);
+    mesh.fillUV();
     mesh.computeNormals();
 
     // Create framebuffer and render
