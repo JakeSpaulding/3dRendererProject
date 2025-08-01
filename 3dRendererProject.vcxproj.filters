@@ -56,9 +56,6 @@
     <ClInclude Include="stb_image.h">
       <Filter>External</Filter>
     </ClInclude>
-    <ClInclude Include="eulerAngles.hpp">
-      <Filter>Header Files\Vector and matrix defs</Filter>
-    </ClInclude>
     <ClInclude Include="vectors.hpp">
       <Filter>Header Files\Vector and matrix defs</Filter>
     </ClInclude>
@@ -94,6 +91,9 @@
     </ClInclude>
     <ClInclude Include="VectorFuncTemplate.hpp">
       <Filter>Header Files\Vector and matrix defs\templates</Filter>
+    </ClInclude>
+    <ClInclude Include="Lighting.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
