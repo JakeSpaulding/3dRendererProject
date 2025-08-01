@@ -1,0 +1,3 @@
+C:/Users/jakem/source/repos/RasterEngine2/build/CMakeFiles/RasterEngine2.dir
+C:/Users/jakem/source/repos/RasterEngine2/build/CMakeFiles/edit_cache.dir
+C:/Users/jakem/source/repos/RasterEngine2/build/CMakeFiles/rebuild_cache.dir

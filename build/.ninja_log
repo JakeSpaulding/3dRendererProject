@@ -1,0 +1,6 @@
+# ninja log v6
+10	512	7757720133047136	CMakeFiles/RasterEngine2.dir/src/Texture.cpp.obj	15393019194b6f52
+12	581	7757720133067002	CMakeFiles/RasterEngine2.dir/src/Mesh.cpp.obj	26a531e63a272561
+13	924	7757720803784969	CMakeFiles/RasterEngine2.dir/src/RasterEngine2.cpp.obj	3411af020b16bdce
+15	930	7757720803804871	CMakeFiles/RasterEngine2.dir/src/DrawFuncs.cpp.obj	51cc608a8e79dbae
+930	1161	7757720812955317	RasterEngine2.exe	9615ad9434d1ba36
