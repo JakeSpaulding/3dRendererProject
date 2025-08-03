@@ -1,119 +1,120 @@
 #pragma once
 
-// defines the camera structs including orthographic and perspective
+// defines the unified camera struct for both orthographic and perspective projection
 #include "quaternion.hpp"
 #include "matlib.hpp"
 
-// orthographic cam
-struct CameraO {
-	vec3 pos;
-	float w;
-	float h;
-	quaternion rot;
-	float scale; // how big the viewbox is
-	float zfar; // how far the render distance is
-	mat4 projMat;
-
-	// updates the projection matrix with the new data
-	void updateMat(void) {
-		projMat = NDCtSc(w,h)*orthoSpaceTransMat(scale, zfar, w/h) * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
-	}
-
-	// creates a camera at position p with rotation q and generates the projection matrix
-	CameraO(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1), float s = 1, float f = 100, unsigned int wi = 1920, unsigned int he = 1080) 
-		: pos(vec3(p[0],p[1],p[2])), rot(r), zfar(f), scale(s),w(float(wi)),h(float(he)) {
-		// constuct the matricies
-		updateMat();
-	}
-	void setRotQ(quaternion const& q) {
-		rot = q;
-		updateMat();
-	}
-	// allows the camera to be set to a new position
-	void setPos(vec3 const& np) {
-		// move the position
-		pos = np;
-		updateMat();
-	}
-	// update the pixel height
-	void setHeight(float a) {
-		h = a;
-		updateMat();
-	}
-	// update the pixel width
-	void setwidth(float a) {
-		w = a;
-		updateMat();
-	}
-	// update the render distance
-	void setZFar(const float f) {
-		zfar = f;
-		updateMat();
-	}
-	// let you just use radians in the fov
-	void setScale(const float f) {
-		scale = f;
-		updateMat();
-	}
+enum class ProjectionType {
+    PERSPECTIVE,
+    ORTHOGRAPHIC
 };
 
-// perspective cam
-struct CameraP {
-	vec3 pos;
-	quaternion rot;
-	float w;
-	float h;
-	float fov;
-	float znear;
-	float zfar;
-	mat4 projMat;
+struct Camera {
+    vec3 pos;
+    quaternion rot;
+    ProjectionType projection_type;
+    
+    // Perspective-specific parameters
+    float fov;      // Field of view (perspective only)
+    float znear;    // Near plane (perspective only)
+    
+    // Orthographic-specific parameters  
+    float scale;    // Orthographic scale (orthographic only)
+    
+    // Common parameters
+    float zfar;     // Far plane (both)
 
-	// updates the projection matrix with the new data
-	void updateMat(void) {
-		projMat = NDCtSc(w,h)*perspectiveProj(fov, znear, zfar, w/h) * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
-	}
+    // Perspective camera constructor
+    Camera(vec3 p, quaternion r, float ang, float n, float f)
+        : pos(p), rot(r), projection_type(ProjectionType::PERSPECTIVE), 
+          fov(ang), znear(n), scale(1.0f), zfar(f) {}
+    
+    // Orthographic camera constructor  
+    Camera(vec3 p, quaternion r, float s, float f)
+        : pos(p), rot(r), projection_type(ProjectionType::ORTHOGRAPHIC),
+          fov(90.0f), znear(1.0f), scale(s), zfar(f) {}
 
-	// creates a camera at position p with rotation q and generates the projection matrix
-	CameraP(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1), float ang = 100, float n = 1, float f = 100, unsigned int wi = 1920, unsigned int he = 1080) 
-		: pos(vec3(p[0], p[1], p[2])), znear(n), rot(r), zfar(f), fov(ang), w(float(wi)), h(float(he)) {
-		// constuct the matricies
-		updateMat();
-	}
+    // Default constructor (perspective)
+    Camera(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1))
+        : pos(p), rot(r), projection_type(ProjectionType::PERSPECTIVE),
+          fov(90.0f), znear(1.0f), scale(1.0f), zfar(100.0f) {}
 
-	// allows for updating the rotation with a quaternion
-	void setRotQ(quaternion const& q) {
-		rot = q;
-		updateMat();
-	}
-	// allows the camera to be set to a new position
-	void setPos(vec3 const& np) {
-		// move the position
-		pos = np;
-		updateMat();
-	}
-	// update the pixel height
-	void setHeight(float a) {
-		h = a;
-		updateMat();
-	}
-	// update the pixel width
-	void setwidth(float a) {
-		w = a;
-		updateMat();
-	}
-	// update the fov ( ind degrees
-	void setFOV(const float f) {
-		fov = f;
-		updateMat();
-	}
-	// update the render distance
-	void setZFar(const float f) {
-		zfar = f;
-		updateMat();
-	}
-	// let you just use radians in the fov
-	void setFovRad(const float f) {
-		fov = f;
-		updateMat();
-	}
+    // Generate projection matrix with provided aspect ratio
+    mat4 getProjectionMatrix(float aspectRatio) const {
+        mat4 projMatrix;
+        
+        if (projection_type == ProjectionType::PERSPECTIVE) {
+            projMatrix = perspectiveProj(fov, znear, zfar, aspectRatio);
+        } else {
+            projMatrix = orthoSpaceTransMat(scale, zfar, aspectRatio);
+        }
+        
+        return projMatrix * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
+    }
+    
+    // Generate projection matrix with screen dimensions (for NDC scaling)
+    mat4 getProjectionMatrix(unsigned int width, unsigned int height) const {
+        float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+        mat4 projMatrix;
+        
+        if (projection_type == ProjectionType::PERSPECTIVE) {
+            projMatrix = perspectiveProj(fov, znear, zfar, aspectRatio);
+        } else {
+            projMatrix = orthoSpaceTransMat(scale, zfar, aspectRatio);
+        }
+        
+        return NDCtSc(width, height) * projMatrix * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
+    }
+
+    // Common setters
+    void setRotQ(quaternion const& q) { rot = q; }
+    void setPos(vec3 const& np) { pos = np; }
+    void setZFar(const float f) { zfar = f; }
+    
+    // Perspective-specific setters
+    void setFOV(const float f) { 
+        if (projection_type == ProjectionType::PERSPECTIVE) {
+            fov = f; 
+        }
+    }
+    void setZNear(const float n) { 
+        if (projection_type == ProjectionType::PERSPECTIVE) {
+            znear = n; 
+        }
+    }
+    void setFovDeg(const float f) { setFOV(f); }
+    
+    // Orthographic-specific setters
+    void setScale(const float s) { 
+        if (projection_type == ProjectionType::ORTHOGRAPHIC) {
+            scale = s; 
+        }
+    }
+    
+    // Utility functions
+    bool isPerspective() const { return projection_type == ProjectionType::PERSPECTIVE; }
+    bool isOrthographic() const { return projection_type == ProjectionType::ORTHOGRAPHIC; }
+    
+    // Switch projection type (preserves common parameters)
+    void switchToPerspective(float ang = 90.0f, float n = 1.0f) {
+        projection_type = ProjectionType::PERSPECTIVE;
+        fov = ang;
+        znear = n;
+    }
+    
+    void switchToOrthographic(float s = 1.0f) {
+        projection_type = ProjectionType::ORTHOGRAPHIC;
+        scale = s;
+    }
 };
+
+// Convenience factory functions for backward compatibility
+inline Camera CreatePerspectiveCamera(vec3 pos = vec3(0, 0, 0), quaternion rot = quaternion(0, 0, 0, 1), 
+                                     float fov = 90.0f, float znear = 1.0f, float zfar = 100.0f) {
+    return Camera(pos, rot, fov, znear, zfar);
+}
+
+inline Camera CreateOrthographicCamera(vec3 pos = vec3(0, 0, 0), quaternion rot = quaternion(0, 0, 0, 1),
+                                      float scale = 1.0f, float zfar = 100.0f) {
+    return Camera(pos, rot, scale, zfar);
+}

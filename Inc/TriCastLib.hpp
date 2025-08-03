@@ -1,11 +1,13 @@
 #pragma once
 // contains functions for geometry math
 #include "geometry.hpp"
+
 // applies a matrix transform to all points in a vbo and outputs it to vboout
 inline void projectVBO(std::vector<vec3>& VBOout, std::vector<vec3> const& VBOin, mat4 projMat) {
 	VBOout.resize(VBOin.size());
-	for (int i = VBOin.size() - 1; i >= 0; i--) {
-		VBOout[i] = projMat * VBOin[i]; // project it
+	// Use size_t for container iteration but cast to int for countdown loop
+	for (size_t i = VBOin.size(); i > 0; --i) {  // Changed to size_t
+		VBOout[i-1] = projMat * VBOin[i-1]; // project it
 	}
 }
 

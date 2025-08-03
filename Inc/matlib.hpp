@@ -74,19 +74,46 @@ inline mat4 vulkanAxisRotate() {
         0, 0, 0, 1);
 }
 
-// converts from NDC to pixel coordiantes
-inline mat4 NDCtSc(float w, float h) {
-    float x = static_cast<float> (w / 2.0f);
-    float y = static_cast<float> (h / 2.0f);
+// converts from NDC to pixel coordinates and corrects aspect ratio
+inline mat4 NDCtSc(unsigned int w, unsigned int h) {
+    float halfW = static_cast<float>(w) * 0.5f;
+    float halfH = static_cast<float>(h) * 0.5f;
     return mat4(
-        x, 0, 0, x,
-        0, y, 0, y,
-        0, 0, 1, 0,
-        0, 0, 0, 1);
+        halfW, 0,     0, halfW,  // Scale by half-width, translate by half-width
+        0,     halfH, 0, halfH,  // Scale by half-height, translate by half-height  
+        0,     0,     1, 0,      // Keep Z unchanged
+        0,     0,     0, 1       // Homogeneous coordinate
+    );
+}
+
+// Alternative version that handles aspect ratio correction in the projection
+inline mat4 NDCtScWithAspect(unsigned int w, unsigned int h) {
+    float halfW = static_cast<float>(w) * 0.5f;
+    float halfH = static_cast<float>(h) * 0.5f;
+    float aspect = static_cast<float>(w) / static_cast<float>(h);
+    
+    // If you want to maintain square pixels and fit to the smaller dimension
+    if (aspect > 1.0f) {
+        // Width is larger - scale down width to maintain aspect
+        return mat4(
+            halfH, 0,     0, halfW,
+            0,     halfH, 0, halfH,
+            0,     0,     1, 0,
+            0,     0,     0, 1
+        );
+    } else {
+        // Height is larger - scale down height to maintain aspect  
+        return mat4(
+            halfW, 0,     0, halfW,
+            0,     halfW, 0, halfH,
+            0,     0,     1, 0,
+            0,     0,     0, 1
+        );
+    }
 }
 
 // takes in the fov, znear, zfar, width and height and creates a perspective projection matrix
-inline mat4 perspectiveProj(float ang = 90.0f, float n = 1, float f = 100, float a = 16.0f/9.0f) {
+inline mat4 perspectiveProj(float ang = 90.0f, float n = 1, float f = 100, float a = 1.0f) {
     const float q = f / (f - n); // get the z stretch
     const float t = 1 / tan(ang * 0.5f); // the scaling factor for x and y
     return mat4(

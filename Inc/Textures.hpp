@@ -1,12 +1,12 @@
 // contains the texture struct
 
 #pragma once
-#pragma once
 #include "stb_image.h"
 #include <fstream>
 #include <vector>
 #include <iostream>
 #include <cmath>
+
 struct Color {
     union {
         struct { uint8_t a,b,g,r; };
@@ -35,60 +35,60 @@ inline float wrap(float n) {
 
 // stores a texture as a vector of colors with a width and height param enter a color value to make the texture a plain color
 struct texture2d {
-    int w, h;
+    bool opaque; // if it has any transparancy this is false
+    unsigned int w, h;  // Changed to unsigned int
     std::vector<Color> img; // the texture data
     void loadTexturePNG(const char* filename); // loads the data from the file
     void loadTextureBMP(const char* filename); // loads the data from the file
     
-    texture2d() : w(1),h(1){}
+    texture2d() : w(1), h(1) {}
     // default constructor
-    texture2d(int wi, int he) : w(wi), h(he) {
-        img.resize(w * h);
+    texture2d(unsigned int wi, unsigned int he) : w(wi), h(he) {  // Changed to unsigned int
+        img.resize(static_cast<size_t>(w) * h);  // Use size_t for vector resize
     }
     texture2d(Color c) : w(1), h(1) {
         img.resize(1);
         img[0] = c;
     }
     // overload subscript
-    Color operator[](int n) { 
+    Color operator[](size_t n) {  // Changed to size_t for array indexing
         return img[n]; 
     }
-    const Color operator[](int n) const {
+    const Color operator[](size_t n) const {  // Changed to size_t for array indexing
         return img[n];
     }
     // returns the pixel at the desired coordinates
-    Color getPix(int u, unsigned int v) {
-        return img[v * w + u];
+    Color getPix(unsigned int u, unsigned int v) {  // Changed to unsigned int
+        return img[static_cast<size_t>(v) * w + u];  // Use size_t for indexing calculation
     }
-    const Color getPix(int u, int v) const {
-        return img[v * w + u];
+    const Color getPix(unsigned int u, unsigned int v) const {  // Changed to unsigned int
+        return img[static_cast<size_t>(v) * w + u];  // Use size_t for indexing calculation
     }
     // nearest neighbor
     const Color nearestN(float u, float v) const {
         // wrap the coordinates
         u = wrap(u);
         v = wrap(v);
-        int x = std::min(static_cast<int>(u * w + 0.5f), w - 1);
-        int y = std::min(static_cast<int>(v * h + 0.5f), h - 1); // round coords
-        return img[y * w + x];
+        unsigned int x = std::min(static_cast<unsigned int>(u * w + 0.5f), w - 1);  // Changed to unsigned int
+        unsigned int y = std::min(static_cast<unsigned int>(v * h + 0.5f), h - 1);  // Changed to unsigned int
+        return img[static_cast<size_t>(y) * w + x];  // Use size_t for indexing calculation
     }
     // bilinear filter
-    const Color bilinear(float u, float v) const{
+    const Color bilinear(float u, float v) const {
         // wrap coordinates
         u = wrap(u), v = wrap(v);
         // get the pixel coords
         float x = u * (w - 1), y = v * (h - 1);
 
-        int x0 = static_cast<int>(floor(x));
-        int x1 = std::min(static_cast<int>(x0 + 1), w - 1);
-        int y0 = static_cast<unsigned int>(floor(y));
-        int y1 = std::min(static_cast<int>(y0 + 1), h - 1);
+        unsigned int x0 = static_cast<unsigned int>(floor(x));  // Changed to unsigned int
+        unsigned int x1 = std::min(x0 + 1, w - 1);  // Changed to unsigned int
+        unsigned int y0 = static_cast<unsigned int>(floor(y));  // Changed to unsigned int
+        unsigned int y1 = std::min(y0 + 1, h - 1);  // Changed to unsigned int
 
         float fx = x - x0;
         float fy = y - y0;
 
-        // Helper to get pixel
-
+        // Get corner pixels
         Color c00 = getPix(x0, y0);
         Color c10 = getPix(x1, y0);
         Color c01 = getPix(x0, y1);
@@ -120,8 +120,6 @@ struct texture2d {
             (1 - fx) * fy * c01.a +
             fx * fy * c11.a
             );
-       // std::cout << result.color << "\n";
         return result;
     }
-
 };

@@ -1,5 +1,5 @@
 #pragma once
-// this contains the structs for different sized matricies
+// this contains the structs for different sized matrices
 #include "vectors.hpp"
 
 // 2x2 matrix
@@ -20,7 +20,7 @@ struct mat2 : Mbase<2> {
     }
 
     float det() const {
-        return data[0] * data[2] - data[1] * data[0];
+        return data[0] * data[3] - data[1] * data[2];  // Fixed: was data[1] * data[0]
     }
 
     mat2 inv() const {
@@ -29,15 +29,15 @@ struct mat2 : Mbase<2> {
             d = 1 / d;
             return mat2(
                 data[3] * d, -data[1] * d,
-                -data[2] * d, data[0]* d);
+                -data[2] * d, data[0] * d);
         }
         return mat2();
     }
 
     vec2 operator*(vec2 const& vec) const {
         vec2 tmp(0, 0);
-        for (int i = 0; i < 2; i++) {
-            for (int n = 0; n < 2; n++) {
+        for (unsigned int i = 0; i < 2; i++) {  // Changed to unsigned int
+            for (unsigned int n = 0; n < 2; n++) {  // Changed to unsigned int
                 tmp[i] += data[i * 2 + n] * vec[n];
             }
         }
@@ -46,7 +46,7 @@ struct mat2 : Mbase<2> {
     // Copy assignment operator
     mat2& operator=(const mat2& other) {
         if (this != &other) {
-            for (int i = 0; i < 4; ++i) data[i] = other.data[i];
+            for (unsigned int i = 0; i < 4; ++i) data[i] = other.data[i];  // Changed to unsigned int
         }
         return *this;
     }
@@ -60,13 +60,13 @@ struct mat3 : Mbase<3> {
     mat3(const Mbase<3>& base) {
         std::copy(&base.data[0], &base.data[0] + 9, &data[0]);
     }
-    // allow intitialization using vec3s
+    // allow initialization using vec3s
     mat3(vec3 a, vec3 b, vec3 c) {
-        std::copy(&a.data[0], &a.data[3], &data[0]);
-        std::copy(&b.data[0], &b.data[3], &data[3]);
-        std::copy(&c.data[0], &c.data[3], &data[6]);
+        std::copy(&a.data[0], &a.data[0] + 3, &data[0]);  // Fixed: was &a.data[3]
+        std::copy(&b.data[0], &b.data[0] + 3, &data[3]);  // Fixed: was &b.data[3]
+        std::copy(&c.data[0], &c.data[0] + 3, &data[6]);  // Fixed: was &c.data[3]
     }
-    // allow the passing of indivdual floats
+    // allow the passing of individual floats
     mat3(float a1 = 0, float a2 = 0, float a3 = 0,
         float b1 = 0, float b2 = 0, float b3 = 0,
         float c1 = 0, float c2 = 0, float c3 = 0) {
@@ -79,8 +79,8 @@ struct mat3 : Mbase<3> {
     }
     vec3 operator*(vec3 const& vec) const {
         vec3 tmp(0, 0, 0);
-        for (int i = 0; i < 3; i++) {
-            for (int n = 0; n < 3; n++) {
+        for (unsigned int i = 0; i < 3; i++) {  // Changed to unsigned int
+            for (unsigned int n = 0; n < 3; n++) {  // Changed to unsigned int
                 tmp[i] += data[i * 3 + n] * vec[n];
             }
         }
@@ -101,7 +101,7 @@ struct mat3 : Mbase<3> {
     // Copy assignment operator
     mat3& operator=(const mat3& other) {
         if (this != &other) {
-            for (int i = 0; i < 9; ++i) data[i] = other.data[i];
+            for (unsigned int i = 0; i < 9; ++i) data[i] = other.data[i];  // Changed to unsigned int
         }
         return *this;
     }
@@ -134,7 +134,7 @@ struct mat4 : Mbase<4> {
         std::copy(nums, nums + 16, data);
     }
 
-    // casts an mat3 into a homegenous mat4
+    // casts an mat3 into a homogeneous mat4
     mat4(mat3 const& m) {
         float nums[16] = {
             m[0][0], m[0][1], m[0][2], 0,
@@ -144,7 +144,6 @@ struct mat4 : Mbase<4> {
         };
         std::copy(nums, nums + 16, data);
     }
-
 
     float det3() const {
         float n = data[0] * (data[5] * data[10] - data[6] * data[9]) -
@@ -159,17 +158,17 @@ struct mat4 : Mbase<4> {
     // matrix - vector multiplication
     vec4 operator*(vec4 const& vec) const {
         vec4 tmp(0, 0, 0, 0);
-        for (int i = 0; i < 4; i++) {
-            for (int n = 0; n < 4; n++) {
+        for (unsigned int i = 0; i < 4; i++) {  // Changed to unsigned int
+            for (unsigned int n = 0; n < 4; n++) {  // Changed to unsigned int
                 tmp[i] += data[i * 4 + n] * vec[n];
             }
         }
         return(tmp);
     }
 
-    //apply homogenous transform to a vec3
+    //apply homogeneous transform to a vec3
     vec3 operator*(vec3 const& v) const {
-        vec4 tmp(v, 1); // cast v onto a  vec4
+        vec4 tmp(v, 1); // cast v onto a vec4
         tmp = *this * tmp;
         return (tmp.v4tv3()); // apply transform and cast back
     }
@@ -177,7 +176,7 @@ struct mat4 : Mbase<4> {
     // Copy assignment operator     
     mat4& operator=(const mat4& other) {
         if (this != &other) {
-            for (int i = 0; i < 16; ++i) data[i] = other.data[i];
+            for (unsigned int i = 0; i < 16; ++i) data[i] = other.data[i];  // Changed to unsigned int
         }
         return *this;
     }

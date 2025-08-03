@@ -5,8 +5,8 @@
 #include "TriCastLib.hpp"
 
 struct fbo {
-	int screen_width;
-	int screen_height;
+	unsigned int screen_width;
+	unsigned int screen_height;
 	uint8_t samples;
 	std::vector<vec2> sampleOffset;
 	std::vector<Color> buffer;// initialize the buffer
@@ -17,28 +17,31 @@ struct fbo {
 	// set the msaa offset values
 	void setMsaaOffset(std::vector<vec2> const& sam) {
 		sampleOffset.resize(samples);
-		// avoid slicing by intializing with vec2s
-		for (int i = 0; i < samples; i++) sampleOffset[i] = vec2(sam[i]);
+		// avoid slicing by initializing with vec2s
+		for (unsigned int i = 0; i < samples; i++) sampleOffset[i] = vec2(sam[i]);  // Changed to unsigned int
 	}
 
 	// constructor width height and samples and sample offset
-	fbo(int sw, int sh, uint8_t upr = 1, std::vector<vec2> sam = { vec2(0,0) }) : screen_height(sh), samples(upr), screen_width(sw) {
+	fbo(unsigned int sw, unsigned int sh, uint8_t upr = 1, std::vector<vec2> sam = { vec2(0,0) }) : screen_height(sh), samples(upr), screen_width(sw) {
 		if (samples > 1) {
-			buffer.resize(screen_height * screen_width * samples); // allocate size
+			// Cast to size_t for vector operations
+			size_t buffer_size = static_cast<size_t>(screen_height) * screen_width * samples;
+			buffer.resize(buffer_size); // allocate size
 			std::fill(&buffer[0], &buffer[0] + buffer.size(), 0); // fill with zeros
-			Zbuffer.resize(screen_height * screen_width * samples);
+			Zbuffer.resize(buffer_size);
 			std::fill(&Zbuffer[0], &Zbuffer[0] + Zbuffer.size(), 1.0f);
 			sampleOffset.resize(samples);
 			setMsaaOffset(sam);
 		}
-		Zframe.resize(screen_height * screen_width ); // allocate size
-		frame.resize(screen_height * screen_width); // allocate size
+		size_t frame_size = static_cast<size_t>(screen_height) * screen_width;
+		Zframe.resize(frame_size); // allocate size
+		frame.resize(frame_size); // allocate size
 		
 		std::fill(&frame[0], &frame[0] + frame.size(), 0); // fill with zeros
 		std::fill(&Zframe[0], &Zframe[0] + Zframe.size(), 1.0f);
 	}
 
-	// converts the buffer to a fram
+	// converts the buffer to a frame
 	void buffertFrame();
 	// draws the range with MSAA
 	void drawRangeMSAA(int xmin, int xmax, int ymin, int ymax, Vert const& v0, Vert const& v1, Vert const& v2, float area, 
@@ -55,7 +58,10 @@ struct fbo {
 	// draws the mesh of an array of vertexes and indexes based off of an inputted camera
 	void drawMesh(Mesh const& mesh, mat4 const& projMat);
 	// draws the mesh multithreaded style
-	void drawMeshThreaded(Mesh const& mesh, mat4 const& projMat, int tileSize = 32);
+	void drawMeshThreaded(Mesh const& mesh, Camera const& cam, unsigned int tileSize = 32);  // Changed to unsigned int
+
+	// allows the passing of multiple meshes
+	void drawMeshesThreaded(vector<Mesh> const& meshes, Camera const& cam, unsigned int tileSize = 32);  // Changed to unsigned int
 
 };
 
