@@ -46,12 +46,8 @@ struct Mesh {
     std::vector <unsigned int> UVEBO;
     std::vector <vec3> Normals;
     std::vector <unsigned int> NEBO;
-    std::vector <Vert> Verts; // allows the storage of vert structs instead of attribute buffers (Depricated)
-    std::vector <unsigned int> VertEBO;
     Material material; // material data
 
-    // computes vertex normals for the verts buffer
-    void computeNormalsVertsBuffer();
     // computes normals for the normal buffer
     void computeNormals();
 

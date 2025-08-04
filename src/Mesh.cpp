@@ -4,25 +4,6 @@
 #include <string>
 #include <vector>
 
-// computes and sets the normals for the vertices in a mesh (deprecated)
-void Mesh::computeNormalsVertsBuffer() {
-	// loop through all tris
-	for (size_t i = 0; i < VertEBO.size(); i += 3) {  // Container iteration - use size_t
-		// create addresses for our verts
-		Vert& a = Verts[i];
-		Vert& b = Verts[i + 1];
-		Vert& c = Verts[i + 2];
-		// compute normal
-		vec3 norm(faceNormal(a.pos, b.pos, c.pos));
-		// add the normals to each vert
-		a.N = a.N + norm;
-		b.N = b.N + norm;
-		c.N = c.N + norm;
-	}
-	// loop through all verts and normalize
-	for (size_t i = 0; i < Verts.size(); i++) Verts[i].N.normalize();  // Container iteration - use size_t
-}
-
 // adds a norm vec3 to the norm buffer
 void Mesh::computeNormals() {
 	// store all of the normals (inefficiently) in an array which corresponds to each point
