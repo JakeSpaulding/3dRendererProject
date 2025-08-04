@@ -47,6 +47,11 @@ struct Mesh {
     std::vector <vec3> Normals;
     std::vector <unsigned int> NEBO;
     Material material; // material data
+    vec3 bboxMin; // stores the min x y and z
+    vec3 bboxMax; // stores the max x y and z
+    vec3 bboxCenter; // stores the center position of the bbox
+    
+    void computeBBOX(); // computes the bbox
 
     // computes normals for the normal buffer
     void computeNormals();

@@ -40,7 +40,8 @@ struct fbo {
 		std::fill(&frame[0], &frame[0] + frame.size(), 0); // fill with zeros
 		std::fill(&Zframe[0], &Zframe[0] + Zframe.size(), 1.0f);
 	}
-
+	// draws a mesh using threads to tiles
+	void threadDrawInitializer(Mesh const& mesh, vector<vec3> const& projVBO, uint32_t tileSize = 256);
 	// converts the buffer to a frame
 	void buffertFrame();
 	// draws the range with MSAA

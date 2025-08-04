@@ -2,6 +2,7 @@
 #include "matrixTemplate.hpp"
 #include "VectorFuncTemplate.hpp"
 #include <ostream>
+using namespace std;
 struct vec2 {
     union {
         float data[2];

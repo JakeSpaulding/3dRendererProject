@@ -53,17 +53,16 @@ struct Camera {
     }
     
     // Generate projection matrix with screen dimensions (for NDC scaling)
-    mat4 getProjectionMatrix(unsigned int width, unsigned int height) const {
-        float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+    mat4 getProjectionMatrix() const {
         mat4 projMatrix;
         
         if (projection_type == ProjectionType::PERSPECTIVE) {
-            projMatrix = perspectiveProj(fov, znear, zfar, aspectRatio);
+            projMatrix = perspectiveProj(fov, znear, zfar);
         } else {
-            projMatrix = orthoSpaceTransMat(scale, zfar, aspectRatio);
+            projMatrix = orthoSpaceTransMat(scale, zfar);
         }
         
-        return NDCtSc(width, height) * projMatrix * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
+        return projMatrix * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
     }
 
     // Common setters

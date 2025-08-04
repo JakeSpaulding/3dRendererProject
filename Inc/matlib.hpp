@@ -69,7 +69,7 @@ inline mat3 Ry(float a) {
 inline mat4 vulkanAxisRotate() {
     return mat4(
         1, 0, 0, 0,
-        0,-1, 0, 0,
+        0,1, 0, 0,
         0, 0,-1, 0,
         0, 0, 0, 1);
 }
@@ -88,26 +88,26 @@ inline mat4 NDCtSc(unsigned int w, unsigned int h) {
 
 // Alternative version that handles aspect ratio correction in the projection
 inline mat4 NDCtScWithAspect(unsigned int w, unsigned int h) {
-    float halfW = static_cast<float>(w) * 0.5f;
-    float halfH = static_cast<float>(h) * 0.5f;
-    float aspect = static_cast<float>(w) / static_cast<float>(h);
+    float x = float(w) * 0.5f;
+    float y = float(h) * 0.5f;
+    float aspect = float(w) / static_cast<float>(h);
     
     // If you want to maintain square pixels and fit to the smaller dimension
     if (aspect > 1.0f) {
         // Width is larger - scale down width to maintain aspect
         return mat4(
-            halfH, 0,     0, halfW,
-            0,     halfH, 0, halfH,
-            0,     0,     1, 0,
-            0,     0,     0, 1
+            y, 0, 0, x,
+            0, y, 0, y,
+            0, 0, 1, 0,
+            0, 0, 0, 1
         );
     } else {
         // Height is larger - scale down height to maintain aspect  
         return mat4(
-            halfW, 0,     0, halfW,
-            0,     halfW, 0, halfH,
-            0,     0,     1, 0,
-            0,     0,     0, 1
+            x, 0, 0, x,
+            0, x, 0, y,
+            0, 0, 1, 0,
+            0, 0, 0, 1
         );
     }
 }
@@ -135,7 +135,7 @@ inline mat4 GLperspectiveProj(float ang = 90.0f, float n = 1, float f = 100, flo
 
 // makes a matrix to project any orthographic volume to vulkan's cannonical orthographic volume (left right top bottom near far)
 // not as useful if you are using a default camera
-inline mat4 orthoSpaceTransMat(const float s, const float f, const float a) {
+inline mat4 orthoSpaceTransMat(const float s, const float f, const float a = 1) {
     // combination of a translation of the center to the origin and a stretch of the sides to fit the viewbox
     return mat4(
         1/(a * s), 0, 0, 0,

@@ -91,21 +91,32 @@ void Mesh::loadOBJ(const char* filename) {
 
 			// loop through all ids on the row
 			while (iss >> id) {
-				std::vector<unsigned int> vertmp; // temporarily stores all of the indexes for the vertex attributes of one of the vertices
-				std::replace(id.begin(), id.end(), '/', ' '); // replace all slashes with spaces
-				std::istringstream viss(id); // turn the current vert into a stream
-				std::string tmp;
-				while (viss >> tmp) {
-					vertmp.push_back(static_cast<unsigned int>(std::stoi(tmp))); // push back the current attribute index - cast to unsigned int
-				}
-				facePOS.push_back(vertmp[0]);
-				// if there is uv data add it
-				if (vertmp.size() > 1) {
-					faceUV.push_back(vertmp[1]);
-				}
-				// add normals if they are there
-				if (vertmp.size() > 2) {
-					faceN.push_back(vertmp[2]);
+				std::vector<unsigned int> vertmp;
+				// Handle v//vn format
+				if (id.find("//") != std::string::npos) {
+					// Split on "//"
+					size_t pos = id.find("//");
+					std::string v_str = id.substr(0, pos);
+					std::string vn_str = id.substr(pos + 2);
+					vertmp.push_back(static_cast<unsigned int>(std::stoi(v_str)));
+					// No texture coordinate, so skip faceUV
+					faceN.push_back(static_cast<unsigned int>(std::stoi(vn_str)));
+					facePOS.push_back(vertmp[0]);
+				} else {
+					// Replace '/' with ' ' and parse as before
+					std::replace(id.begin(), id.end(), '/', ' ');
+					std::istringstream viss(id);
+					std::string tmp;
+					while (viss >> tmp) {
+						vertmp.push_back(static_cast<unsigned int>(std::stoi(tmp)));
+					}
+					facePOS.push_back(vertmp[0]);
+					if (vertmp.size() > 1) {
+						faceUV.push_back(vertmp[1]);
+					}
+					if (vertmp.size() > 2) {
+						faceN.push_back(vertmp[2]);
+					}
 				}
 			}
 			// load the Pos buffer
@@ -125,6 +136,7 @@ void Mesh::loadOBJ(const char* filename) {
 	if (NEBO.size() == 0) {
 		computeNormals();
 	}
+	computeBBOX();
 }
 
 // adds a vertex to the buffers (will not take normal data)
@@ -183,4 +195,21 @@ void Mesh::fillUV() {
 		UVEBO.resize(VEBO.size());
 		std::fill(UVEBO.data(), UVEBO.data() + UVEBO.size(), 0);
 	}
+}
+
+void Mesh::computeBBOX() {
+	// make sure it is not empty
+	if (VBO.empty()) return;
+	bboxMin = bboxMax = VBO[0]; // initialize as the first vert
+
+	// loop through  the verts
+	for (vec3 v : VBO) {
+		// compare each dimension 
+		for (int i = 0; i < 3; i++) {
+			if (v[i] < bboxMin[i]) bboxMin[i] = v[i];
+			else if (v[i] > bboxMax[i]) bboxMax[i] = v[i];
+		}
+	}
+	// compute center
+	bboxCenter = lerp<vec3>(bboxMin, bboxMax, 0.5f);
 }

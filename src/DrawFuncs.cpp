@@ -37,7 +37,7 @@ void fbo::buffertFrame() {
 	}
 }
 
-//draws pixels in the range provided using UV coordinates
+//draws pixels in the range provided using UV coordinates (no filter or alpha)
 void fbo::drawRange(int xmin, int xmax, int ymin, int ymax, 
 	Vert const& v0, Vert const& v1, Vert const& v2, float area, Material const& material) {
 	for (int x = xmin; x <= xmax; x++) { // Keep int - can be negative during clipping
@@ -58,10 +58,10 @@ void fbo::drawRange(int xmin, int xmax, int ymin, int ymax,
 				p[2] = 1.0f / (w[0] + w[1] + w[2]);
 
 				// ensure it is on the top of the frame
-				if (p[2] >= 0 && p[2] < Zframe[y * screen_width + x]) {
+				if (p[2] >= 0 && p[2] <= Zframe[y * screen_width + x]) {
 					// update our frame buffers
 					Zframe[y * screen_width + x] = p[2];
-					frame[y * screen_width + x] = shadeBilinear(v0, v1, v2, p, w, material);
+					frame[y * screen_width + x] = mapBilinear(v0, v1, v2, p, w, material);
 				}
 			}
 		}
@@ -87,25 +87,39 @@ void fbo::drawRangeMSAA(int xmin, int xmax, int ymin, int ymax,
 				float w0 = edgeFunction(v1.pos, v2.pos, p);
 				float w1 = edgeFunction(v2.pos, v0.pos, p);
 				float w2 = edgeFunction(v0.pos, v1.pos, p);
-				
+
 				// take barycentric weights
 				vec3 w(w0, w1, w2);
 				// check if it's in the triangle
 				if (w[0] >= 0 && w[1] >= 0 && w[2] >= 0) {
-					// check if we have called the frag shader yet
-					if (cached == -1) {
-						w[0] /= (area * v0.pos[2]), w[1] /= (area * v1.pos[2]), w[2] /= (area * v2.pos[2]); // normalize & apply inverse z values
-						// find the z coordinate of our pixel
-						p[2] = 1.0f / (w[0] + w[1] + w[2]);
-						// set z buffer
-						Zbuffer[id + s] = p[2];
-						buffer[id + s] = shadeBilinear(v0, v1, v2, p, w, material);
-						cached = static_cast<int>(id + s); // Cast for comparison
-					}
-					// add cached values
-					else {
-						Zbuffer[id + s] = Zbuffer[cached];
-						buffer[id + s] = buffer[cached];
+					w[0] /= (area * v0.pos[2]), w[1] /= (area * v1.pos[2]), w[2] /= (area * v2.pos[2]); // normalize & apply inverse z values
+					// find the z coordinate of our pixel
+					p[2] = 1.0f / (w[0] + w[1] + w[2]);
+					// depth test
+					if (p.z >= 0 && p.z <= Zbuffer[id + s]) {
+						// check if we have called the frag shader yet
+						if (cached == -1) {
+
+							if (p.z >= 0 && p.z <= Zbuffer[id + s]) {
+								Color c = mapBilinear(v0, v1, v2, p, w, material);
+
+								// apply alpha if transparent
+								if (c.a == 255) {
+									// set z buffer
+									Zbuffer[id + s] = p[2];
+									buffer[id + s] = c;
+								}
+								else {
+									buffer[id + s] = alphaBlend(c, buffer[id + s]);
+								}
+								cached = static_cast<int>(id + s); // Cast for comparison
+							}
+							// add cached values
+							else {
+								Zbuffer[id + s] = Zbuffer[cached];
+								buffer[id + s] = buffer[cached];
+							}
+						}
 					}
 				}
 			}
@@ -152,7 +166,7 @@ void fbo::drawMesh(Mesh const& mesh, mat4 const& projMat) {
 
 void fbo::drawTile(Mesh const& mesh, vector<vec3> const& NDC, int txmin, int txmax, int tymin, int tymax) {
 	// loop through each tri
-	for (size_t i = 0; i < mesh.VEBO.size(); i += 3) { // Container iteration - use size_t
+	for (size_t i = 0; i < mesh.VEBO.size(); i += 3) {
 		// initialize Vert structs to make life easier
 		Vert a(NDC[mesh.VEBO[i]], mesh.UV[mesh.UVEBO[i]], mesh.Normals[mesh.NEBO[i]]);
 		Vert b(NDC[mesh.VEBO[i + 1]], mesh.UV[mesh.UVEBO[i + 1]], mesh.Normals[mesh.NEBO[i + 1]]);
@@ -176,22 +190,13 @@ void fbo::drawTile(Mesh const& mesh, vector<vec3> const& NDC, int txmin, int txm
 		}
 	}
 }
-
-// threaded draw funcs, tile size is the sqrt of the number of pixels each thread will take
-void fbo::drawMeshThreaded(Mesh const& mesh, Camera const& cam, unsigned int tileSize) { // Graphics parameter - unsigned int
-	// project points
-	auto start = chrono::high_resolution_clock::now();
-	mat4 projMat = NDCtScWithAspect(screen_width, screen_height) * cam.getProjectionMatrix(screen_width, screen_height);
-	vector<vec3> NDC;
-	projectVBO(NDC, mesh.VBO, projMat);
-	auto end = chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "Projection time: " << duration.count() << " milliseconds" << std::endl;
-	
+void fbo::threadDrawInitializer(Mesh const& mesh, vector<vec3> const& NDC, uint32_t tileSize) {
 	size_t numThreads = static_cast<size_t>(ceil(static_cast<float>(screen_height * screen_width) / static_cast<float>(tileSize * tileSize))); // Thread count - use size_t
 	vector<thread> threads;
 	threads.reserve(numThreads);
-
+#ifdef DEBUG
+	auto start = chrono::high_resolution_clock::now();
+#endif
 	// break into tiles
 	for (unsigned int y = 0; y < screen_height; y += tileSize) { // Graphics coordinates - unsigned int
 		for (unsigned int x = 0; x < screen_width; x += tileSize) { // Graphics coordinates - unsigned int
@@ -201,29 +206,133 @@ void fbo::drawMeshThreaded(Mesh const& mesh, Camera const& cam, unsigned int til
 			// create a thread
 			threads.emplace_back([=, &mesh, &NDC] {
 				this->drawTile(mesh, NDC, static_cast<int>(x), txmax, static_cast<int>(y), tymax);
-			});
+				});
 		}
 	}
-	
-	end = chrono::high_resolution_clock::now();
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "Thread init time: " << duration.count() << " milliseconds" << std::endl;
-	
+#ifdef DEBUG
+	auto end = chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	std::cout << "Tread Innit time: " << duration.count() << " milliseconds" << std::endl;
+	start = chrono::high_resolution_clock::now();
+#endif
 	for (auto& t : threads) {
 		t.join();
 	}
-	
-	end = chrono::high_resolution_clock::now();
+#ifdef DEBUG
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "Thread join time: " << duration.count() << " milliseconds" << std::endl;
+	std::cout << "Tread Join time: " << duration.count() << " milliseconds" << std::endl;
+#endif
+}
+
+
+// threaded draw funcs, tile size is the sqrt of the number of pixels each thread will take
+void fbo::drawMeshThreaded(Mesh const& mesh, Camera const& cam, unsigned int tileSize) { // Graphics parameter - unsigned int
+	// project points
+#ifdef DEBUG
+	auto start = chrono::high_resolution_clock::now();
+#endif
+
+	mat4 projMat = NDCtScWithAspect(screen_width, screen_height) * cam.getProjectionMatrix();
+	vector<vec3> NDC;
+	projectVBO(NDC, mesh.VBO, projMat);
+
+#if DEBUG
+	auto end = chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	std::cout << "Projection time: " << duration.count() << " milliseconds" << std::endl;
+#endif
+	threadDrawInitializer(mesh, NDC, tileSize);
 	// move the buffer to the frame
 	if (samples > 1) buffertFrame();
 }
 
+// draws multiple meshes and handles transparency
 void fbo::drawMeshesThreaded(vector<Mesh> const& meshes, Camera const& cam, unsigned int tileSize) {
 	if (meshes.empty()) return;
-	
+#ifdef DEBUG
 	auto start = chrono::high_resolution_clock::now();
-	mat4 projMat = cam.getProjectionMatrix(screen_width,screen_height);
+#endif
+	mat4 projMat = NDCtScWithAspect(screen_width, screen_height) * cam.getProjectionMatrix(); // create the projection mat
+
+	// make a vector of projected vbos
+	vector<vector<vec3>> projVBOs(meshes.size());
+	vector<float> depths(meshes.size()); // the projected centers
+	// project the vbos
+	for (size_t i = 0; i < meshes.size(); i++) {
+		projectVBO(projVBOs[i], meshes[i].VBO, projMat);
+		depths[i] = (projMat * meshes[i].bboxCenter).z;
+	}
+
+	vector<size_t> opqEBO; // stores the index of opaque meshes
+	vector<size_t> tEBO; // stores the index of transparent meshes
+	opqEBO.reserve(meshes.size()); // reserve the max size, just to be safe
+	tEBO.reserve(meshes.size()); // reserve the max size, just to be safe
+
+	// sort by opacity
+	for (size_t i = 0; i < meshes.size(); i++) {
+		if (meshes[i].material.texture.opaque) {
+			opqEBO.push_back(i);
+		}
+		else {
+			tEBO.push_back(i);
+		}
+	}
+	// sort the transparent meshes
+	std::sort(tEBO.begin(), tEBO.end(), [&](size_t a, size_t b) {
+		return depths[a] > depths[b]; // furthest first
+		});
+
+#ifdef DEBUG
+	auto end = chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	std::cout << "Projection time: " << duration.count() << " milliseconds" << std::endl;
+
+	auto startThreads = chrono::high_resolution_clock::now();
+#endif
+
+	// draw opaque
+	for (size_t i : opqEBO) {
+#ifdef DEBUG
+		auto startThread = chrono::high_resolution_clock::now();
+#endif
+		threadDrawInitializer(meshes[i], projVBOs[i], tileSize);
+#ifdef DEBUG
+		auto endThread = chrono::high_resolution_clock::now();
+		duration = std::chrono::duration_cast<std::chrono::milliseconds>(endThread - startThread);
+		std::cout << "opq thread time: " << duration.count() << " milliseconds" << std::endl;
+#endif
+	}
+#ifdef DEBUG
+	auto endThreads = chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(endThreads - startThreads);
+	std::cout << "opq threads time: " << duration.count() << " milliseconds" << std::endl;
+	startThreads = chrono::high_resolution_clock::now();
+#endif
+
+	// draw alpha
+	for (size_t i : tEBO) {
+#ifdef DEBUG
+		auto startThread = chrono::high_resolution_clock::now();
+#endif
+		threadDrawInitializer(meshes[i], projVBOs[i], tileSize);
+#ifdef DEBUG
+		auto endThread = chrono::high_resolution_clock::now();
+		duration = std::chrono::duration_cast<std::chrono::milliseconds>(endThread - startThread);
+		std::cout << "opq thread time: " << duration.count() << " milliseconds" << std::endl;
+#endif
+	}
+#ifdef DEBUG
+	endThreads = chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(endThreads - startThreads);
+	std::cout << "opq threads time: " << duration.count() << " milliseconds" << std::endl;
+	start = chrono::high_resolution_clock::now();
+#endif
+	// swap msaa buffer
+	if (samples > 1) buffertFrame();
+#ifdef DEBUG 
+	end = chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	std::cout << "buffer swap time: " << duration.count() << " milliseconds" << std::endl;
+#endif
 
 }
