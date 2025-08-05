@@ -194,9 +194,6 @@ void fbo::threadDrawInitializer(Mesh const& mesh, vector<vec3> const& NDC, uint3
 	size_t numThreads = static_cast<size_t>(ceil(static_cast<float>(screen_height * screen_width) / static_cast<float>(tileSize * tileSize))); // Thread count - use size_t
 	vector<thread> threads;
 	threads.reserve(numThreads);
-#ifdef DEBUG
-	auto start = chrono::high_resolution_clock::now();
-#endif
 	// break into tiles
 	for (unsigned int y = 0; y < screen_height; y += tileSize) { // Graphics coordinates - unsigned int
 		for (unsigned int x = 0; x < screen_width; x += tileSize) { // Graphics coordinates - unsigned int
@@ -209,38 +206,20 @@ void fbo::threadDrawInitializer(Mesh const& mesh, vector<vec3> const& NDC, uint3
 				});
 		}
 	}
-#ifdef DEBUG
-	auto end = chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "Tread Innit time: " << duration.count() << " milliseconds" << std::endl;
-	start = chrono::high_resolution_clock::now();
-#endif
 	for (auto& t : threads) {
 		t.join();
 	}
-#ifdef DEBUG
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "Tread Join time: " << duration.count() << " milliseconds" << std::endl;
-#endif
 }
 
 
 // threaded draw funcs, tile size is the sqrt of the number of pixels each thread will take
 void fbo::drawMeshThreaded(Mesh const& mesh, Camera const& cam, unsigned int tileSize) { // Graphics parameter - unsigned int
 	// project points
-#ifdef DEBUG
-	auto start = chrono::high_resolution_clock::now();
-#endif
 
 	mat4 projMat = NDCtScWithAspect(screen_width, screen_height) * cam.getProjectionMatrix();
 	vector<vec3> NDC;
 	projectVBO(NDC, mesh.VBO, projMat);
 
-#if DEBUG
-	auto end = chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "Projection time: " << duration.count() << " milliseconds" << std::endl;
-#endif
 	threadDrawInitializer(mesh, NDC, tileSize);
 	// move the buffer to the frame
 	if (samples > 1) buffertFrame();
@@ -249,9 +228,7 @@ void fbo::drawMeshThreaded(Mesh const& mesh, Camera const& cam, unsigned int til
 // draws multiple meshes and handles transparency
 void fbo::drawMeshesThreaded(vector<Mesh> const& meshes, Camera const& cam, unsigned int tileSize) {
 	if (meshes.empty()) return;
-#ifdef DEBUG
-	auto start = chrono::high_resolution_clock::now();
-#endif
+
 	mat4 projMat = NDCtScWithAspect(screen_width, screen_height) * cam.getProjectionMatrix(); // create the projection mat
 
 	// make a vector of projected vbos
@@ -282,57 +259,18 @@ void fbo::drawMeshesThreaded(vector<Mesh> const& meshes, Camera const& cam, unsi
 		return depths[a] > depths[b]; // furthest first
 		});
 
-#ifdef DEBUG
-	auto end = chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "Projection time: " << duration.count() << " milliseconds" << std::endl;
-
-	auto startThreads = chrono::high_resolution_clock::now();
-#endif
 
 	// draw opaque
 	for (size_t i : opqEBO) {
-#ifdef DEBUG
-		auto startThread = chrono::high_resolution_clock::now();
-#endif
 		threadDrawInitializer(meshes[i], projVBOs[i], tileSize);
-#ifdef DEBUG
-		auto endThread = chrono::high_resolution_clock::now();
-		duration = std::chrono::duration_cast<std::chrono::milliseconds>(endThread - startThread);
-		std::cout << "opq thread time: " << duration.count() << " milliseconds" << std::endl;
-#endif
 	}
-#ifdef DEBUG
-	auto endThreads = chrono::high_resolution_clock::now();
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(endThreads - startThreads);
-	std::cout << "opq threads time: " << duration.count() << " milliseconds" << std::endl;
-	startThreads = chrono::high_resolution_clock::now();
-#endif
+
 
 	// draw alpha
 	for (size_t i : tEBO) {
-#ifdef DEBUG
-		auto startThread = chrono::high_resolution_clock::now();
-#endif
 		threadDrawInitializer(meshes[i], projVBOs[i], tileSize);
-#ifdef DEBUG
-		auto endThread = chrono::high_resolution_clock::now();
-		duration = std::chrono::duration_cast<std::chrono::milliseconds>(endThread - startThread);
-		std::cout << "opq thread time: " << duration.count() << " milliseconds" << std::endl;
-#endif
 	}
-#ifdef DEBUG
-	endThreads = chrono::high_resolution_clock::now();
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(endThreads - startThreads);
-	std::cout << "opq threads time: " << duration.count() << " milliseconds" << std::endl;
-	start = chrono::high_resolution_clock::now();
-#endif
+
 	// swap msaa buffer
 	if (samples > 1) buffertFrame();
-#ifdef DEBUG 
-	end = chrono::high_resolution_clock::now();
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-	std::cout << "buffer swap time: " << duration.count() << " milliseconds" << std::endl;
-#endif
-
 }

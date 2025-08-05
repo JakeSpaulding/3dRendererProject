@@ -69,7 +69,7 @@ inline mat3 Ry(float a) {
 inline mat4 vulkanAxisRotate() {
     return mat4(
         1, 0, 0, 0,
-        0,1, 0, 0,
+        0,-1, 0, 0,
         0, 0,-1, 0,
         0, 0, 0, 1);
 }
