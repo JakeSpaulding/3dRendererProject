@@ -1,6 +1,7 @@
 #pragma once
 // this contains the structs for different sized matrices
 #include "vectors.hpp"
+#include <span>
 
 // 2x2 matrix
 struct mat2 : Mbase<2> {
@@ -17,6 +18,12 @@ struct mat2 : Mbase<2> {
         float b1 = 0, float b2 = 0) {
         float nums[4] = { a1, a2, b1, b2 };
         std::copy(nums, nums + 4, data);
+    }
+
+    // Constructor from array of vec2
+    mat2(const vec2 arr[2]) {
+        std::copy(&arr[0].data[0], &arr[0].data[0] + 2, &data[0]);
+        std::copy(&arr[1].data[0], &arr[1].data[0] + 2, &data[2]);
     }
 
     float det() const {
@@ -77,6 +84,13 @@ struct mat3 : Mbase<3> {
         };
         std::copy(nums, nums + 9, data);
     }
+    // Constructor from array of vec3
+    mat3(const vec3 arr[3]) {
+        std::copy(&arr[0].data[0], &arr[0].data[0] + 3, &data[0]);
+        std::copy(&arr[1].data[0], &arr[1].data[0] + 3, &data[3]);
+        std::copy(&arr[2].data[0], &arr[2].data[0] + 3, &data[6]);
+    }
+
     vec3 operator*(vec3 const& vec) const {
         vec3 tmp(0, 0, 0);
         for (unsigned int i = 0; i < 3; i++) {  // Changed to unsigned int
@@ -135,14 +149,22 @@ struct mat4 : Mbase<4> {
     }
 
     // casts an mat3 into a homogeneous mat4
-    mat4(mat3 const& m) {
+    mat4(mat3 const& m, vec3 v = vec3(0,0,0)) {
         float nums[16] = {
-            m[0][0], m[0][1], m[0][2], 0,
-            m[1][0], m[1][1], m[1][2], 0,
-            m[2][0], m[2][1], m[2][2], 0,
-            0, 0, 0, 1
+            m[0][0], m[0][1], m[0][2], v.x,
+            m[1][0], m[1][1], m[1][2], v.y,
+            m[2][0], m[2][1], m[2][2], v.z,
+            0,  0, 0, 1
         };
         std::copy(nums, nums + 16, data);
+    }
+
+    // Constructor from array of vec4
+    mat4(const vec4 arr[4]) {
+        std::copy(&arr[0].data[0], &arr[0].data[0] + 4, &data[0]);
+        std::copy(&arr[1].data[0], &arr[1].data[0] + 4, &data[4]);
+        std::copy(&arr[2].data[0], &arr[2].data[0] + 4, &data[8]);
+        std::copy(&arr[3].data[0], &arr[3].data[0] + 4, &data[12]);
     }
 
     float det3() const {

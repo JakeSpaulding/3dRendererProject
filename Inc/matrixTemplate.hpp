@@ -4,6 +4,8 @@
 #include <iostream>
 #include <algorithm>
 #include <string.h>
+#include <span>
+#include <cassert>
 
 // allow for accessing rows using subscripting
 struct RowProxy {
@@ -59,6 +61,21 @@ struct Mbase {
         std::copy(&nums[0], &nums[0] + M * M, &data[0]);
     }
 
+    // Constructor from span of floats
+    Mbase(std::span<const float> arr) {
+        assert(arr.size() == M * M && "Mbase requires exactly M*M floats");
+        std::copy(arr.begin(), arr.end(), data);
+    }
+
+    // Constructor from span of spans of floats
+    Mbase(std::span<const std::span<const float>> arr) {
+        assert(arr.size() == M && "Mbase requires exactly M rows");
+        for (size_t i = 0; i < M; ++i) {
+            assert(arr[i].size() == M && "Each row must have M floats");
+            std::copy(arr[i].begin(), arr[i].end(), data + i * M);
+        }
+    }
+
     // subscript access
     float& operator()(size_t row, size_t col) {
         return data[row * M + col];
@@ -77,7 +94,7 @@ struct Mbase {
 
     // matrix multiplication
     Mbase operator*(Mbase const& m2) const {
-        Mbase tmp = Mbase();
+        Mbase tmp;
         for (unsigned int i = 0; i < M; i++) {  // Changed to unsigned int
             for (unsigned int j = 0; j < M; j++) {  // Changed to unsigned int
                 for (unsigned int n = 0; n < M; n++) {  // Changed to unsigned int
@@ -86,6 +103,12 @@ struct Mbase {
             }
         }
         return(tmp);
+    }
+    // element-wise multiplication
+    Mbase elementWise(Mbase const& m2) const {
+        Mbase tmp;
+        for (unsigned int i = 0; i < M * M; i++)  tmp.data[i] = data[i] * m2.data[i];
+        return tmp;
     }
     // matrix-matrix addition
     Mbase operator+(Mbase const& m2) const {

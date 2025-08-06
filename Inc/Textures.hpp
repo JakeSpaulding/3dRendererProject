@@ -6,10 +6,11 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <string>
 
 struct Color {
     union {
-        struct { uint8_t a,b,g,r; };
+        struct { uint8_t r,g,b,a; };
         uint32_t color;
     };
     // constructors  
@@ -36,17 +37,16 @@ inline float wrap(float n) {
 // stores a texture as a vector of colors with a width and height param enter a color value to make the texture a plain color
 struct texture2d {
     bool opaque; // if it has any transparancy this is false
+    bool hasTexture; // indicates if there is a texture ascociated with this struct
     unsigned int w, h;  // Changed to unsigned int
     std::vector<Color> img; // the texture data
+
     void loadTexturePNG(const char* filename); // loads the data from the file
     void loadTextureBMP(const char* filename); // loads the data from the file
     
-    texture2d() : w(1), h(1), opaque(1) {}
-    // default constructor
-    texture2d(unsigned int wi, unsigned int he) : w(wi), h(he), opaque(1) {  // Changed to unsigned int
-        img.resize(static_cast<size_t>(w) * h);  // Use size_t for vector resize
-    }
-    texture2d(Color c) : w(1), h(1), opaque(c.a == 255) {
+    texture2d() : w(1), h(1), opaque(1), hasTexture(0) {}
+ 
+    texture2d(Color c) : w(1), h(1), opaque(c.a == 255), hasTexture(1) {
         img.resize(1);
         img[0] = c;
     }

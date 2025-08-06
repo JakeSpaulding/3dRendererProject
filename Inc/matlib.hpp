@@ -34,6 +34,15 @@ inline mat4 translation4(float a, float b, float c, float d = 1) {
         0, 0, 1, c,
         0, 0, 0, d));
 }
+inline mat4 invTranslation4(vec3 const& v) {
+    vec3 vec = v;
+    for (int i = 0; i < 3; i++) if (vec[i] == 0.0f) vec[i] = -1.0f; // check for 0 division
+    return (mat4(
+        1, 0, 0, -1 / vec[0],
+        0, 1, 0, -1 / vec[1],
+        0, 0, 1, -1 / vec[2],
+        0, 0, 0, 1));
+}
 
 // rotation matricies across each axis
 
@@ -69,25 +78,14 @@ inline mat3 Ry(float a) {
 inline mat4 vulkanAxisRotate() {
     return mat4(
         1, 0, 0, 0,
-        0,-1, 0, 0,
+        0, 1, 0, 0,
         0, 0,-1, 0,
         0, 0, 0, 1);
 }
 
-// converts from NDC to pixel coordinates and corrects aspect ratio
-inline mat4 NDCtSc(unsigned int w, unsigned int h) {
-    float halfW = static_cast<float>(w) * 0.5f;
-    float halfH = static_cast<float>(h) * 0.5f;
-    return mat4(
-        halfW, 0,     0, halfW,  // Scale by half-width, translate by half-width
-        0,     halfH, 0, halfH,  // Scale by half-height, translate by half-height  
-        0,     0,     1, 0,      // Keep Z unchanged
-        0,     0,     0, 1       // Homogeneous coordinate
-    );
-}
 
 // Alternative version that handles aspect ratio correction in the projection
-inline mat4 NDCtScWithAspect(unsigned int w, unsigned int h) {
+inline mat4 NDCtSc(unsigned int w, unsigned int h) {
     float x = float(w) * 0.5f;
     float y = float(h) * 0.5f;
     float aspect = float(w) / static_cast<float>(h);
@@ -111,11 +109,37 @@ inline mat4 NDCtScWithAspect(unsigned int w, unsigned int h) {
         );
     }
 }
+// returns the inverse of this transform
+inline mat4 invNDCtSc(unsigned int w, unsigned int h) {
+    float x = 2.0f / float(w);
+    float y = 2.0f / float(h);
+    float aspect = float(w) / static_cast<float>(h);
+
+    // If you want to maintain square pixels and fit to the smaller dimension
+    if (aspect > 1.0f) {
+        // Width is larger - scale down width to maintain aspect
+        return mat4(
+            y, 0, 0,-x,
+            0, y, 0,-y,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        );
+    }
+    else {
+        // Height is larger - scale down height to maintain aspect  
+        return mat4(
+            x, 0, 0,-x,
+            0, x, 0,-y,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        );
+    }
+}
 
 // takes in the fov, znear, zfar, width and height and creates a perspective projection matrix
 inline mat4 perspectiveProj(float ang = 90.0f, float n = 1, float f = 100, float a = 1.0f) {
     const float q = f / (f - n); // get the z stretch
-    const float t = 1 / tan(ang * 0.5f); // the scaling factor for x and y
+    const float t = 1 / tan(ang * float(M_PI) / 360.0f); // the scaling factor for x and y
     return mat4(
         t / a, 0, 0, 0,
         0, t, 0, 0,
@@ -123,6 +147,19 @@ inline mat4 perspectiveProj(float ang = 90.0f, float n = 1, float f = 100, float
         0, 0, 1, 0
     );
 }
+
+// returns the inverse of the perspective projection matrix
+inline mat4 invPerspectiveProj(float ang = 90.0f, float n = 1, float f = 100, float a = 1.0f) {
+    const float q = f / (f - n); // get the z stretch
+    const float t = tan(ang * float(M_PI)/360.0f); // the scaling factor for x and y
+    return mat4(
+        a*t, 0, 0, 0,
+        0, t, 0, 0,
+        0, 0, 0, 1,
+        0, 0, -1/(q*n), 1/n
+    );
+}
+
 inline mat4 GLperspectiveProj(float ang = 90.0f, float n = 1, float f = 100, float a = 16.0f / 9.0f)
 {
     const float t = 1 / tan(ang * static_cast<float>(M_PI) / 360.0f); // the scaling factor for x and y
@@ -141,6 +178,16 @@ inline mat4 orthoSpaceTransMat(const float s, const float f, const float a = 1) 
         1/(a * s), 0, 0, 0,
         0, 1/(s), 0, 0,
         0, 0, 1 / f, 0,
+        0, 0, 0, 1);
+}
+
+//inverted orthotransmat
+inline mat4 invOrthoSpaceTransMat(const float s, const float f, const float a = 1) {
+    // combination of a translation of the center to the origin and a stretch of the sides to fit the viewbox
+    return mat4(
+       a*s, 0, 0, 0,
+        0, s, 0, 0,
+        0, 0, f, 0,
         0, 0, 0, 1);
 }
 inline mat4 makeVulkanOrtho(float l, float r, float b, float t, float n, float f) {
@@ -265,7 +312,6 @@ inline vec3 Rq(vec3 const& v, quaternion q) {
 inline mat3 etm3(vec3 const& v) {
     return(qtm3(etq(v)));
 }
-
 // converts euler angles to a mat3
 inline mat3 etm3(float ry, float rx, float rz) {
     return(qtm3(etq(ry, rx, rz)));
@@ -285,4 +331,3 @@ template <typename T>
 T lerp(const T& a, const T& b, float t){
     return a * (1 - t) + b * t;
 }   
-

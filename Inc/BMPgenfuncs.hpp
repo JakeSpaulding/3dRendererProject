@@ -6,7 +6,7 @@
 #pragma pack(push, 1)
 struct BMPFileHeader {
     uint16_t bfType = 0x4D42; // 'BM'
-    uint32_t bfSize;
+    uint32_t bfSize = 54;
     uint16_t bfReserved1 = 0;
     uint16_t bfReserved2 = 0;
     uint32_t bfOffBits = 54;
@@ -14,12 +14,12 @@ struct BMPFileHeader {
 
 struct BMPInfoHeader {
     uint32_t biSize = 40;
-    int32_t  biWidth;
-    int32_t  biHeight;
+    int32_t  biWidth = 0;
+    int32_t  biHeight = 0;
     uint16_t biPlanes = 1;
     uint16_t biBitCount = 24;
     uint32_t biCompression = 0;
-    uint32_t biSizeImage;
+    uint32_t biSizeImage = 0;
     int32_t  biXPelsPerMeter = 2835;
     int32_t  biYPelsPerMeter = 2835;
     uint32_t biClrUsed = 0;
@@ -35,7 +35,7 @@ static void FBOtBMP(const std::vector<Color>& FB, const std::string& filename, u
     unsigned int padding = (4 - (rowSize % 4)) % 4;  // Changed to unsigned int
     unsigned char pad[3] = { 0, 0, 0 };
     BMPFileHeader fheader;
-    fheader.bfSize = 3 * w * h + 54 + 3 * padding;
+    fheader.bfSize += 3 * w * h + 3 * padding;
 
     BMPInfoHeader iheader;
     iheader.biHeight = static_cast<int32_t>(h);  // Explicit cast for BMP format requirement
@@ -47,9 +47,9 @@ static void FBOtBMP(const std::vector<Color>& FB, const std::string& filename, u
     file.write(reinterpret_cast<char*>(&iheader), sizeof(iheader));
 
     // BMP stores rows bottom-to-top
-    for (int y = static_cast<int>(h) - 1; y >= 0; --y) {  // Keep int for countdown loop
-        for (unsigned int x = 0; x < w; ++x) {  // Changed to unsigned int
-            size_t i = static_cast<size_t>(y) * w + x;  // Buffer index - use size_t
+    for (uint32_t y = 0; y < h; y++) {
+        for (unsigned int x = 0; x < w; ++x) {  
+            size_t i = static_cast<size_t>(y) * w + x;  
             file.write(reinterpret_cast<const char*>(&FB[i].b), 1);
             file.write(reinterpret_cast<const char*>(&FB[i].g), 1);
             file.write(reinterpret_cast<const char*>(&FB[i].r), 1);

@@ -2,6 +2,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <fstream>
+#include <string>
+using namespace std;
 
 // loads a bmp file into the texture buffer
 void texture2d::loadTextureBMP(const char* filename) {
@@ -35,12 +37,15 @@ void texture2d::loadTextureBMP(const char* filename) {
 		}
 	}
 	opaque = 1;
+	hasTexture = 1;
 	file.close();
 }
 
 // loads a png file into the texture struct
 void texture2d::loadTexturePNG(const char* filename) {
 	int width, height, channels;
+	hasTexture = 1;
+
 	unsigned char* data = stbi_load(filename, &width, &height, &channels, 4); // force RGBA
 
 	if (!data) throw std::runtime_error("Failed to load PNG texture");

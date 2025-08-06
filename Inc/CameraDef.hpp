@@ -38,19 +38,6 @@ struct Camera {
     Camera(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1))
         : pos(p), rot(r), projection_type(ProjectionType::PERSPECTIVE),
           fov(90.0f), znear(1.0f), scale(1.0f), zfar(100.0f) {}
-
-    // Generate projection matrix with provided aspect ratio
-    mat4 getProjectionMatrix(float aspectRatio) const {
-        mat4 projMatrix;
-        
-        if (projection_type == ProjectionType::PERSPECTIVE) {
-            projMatrix = perspectiveProj(fov, znear, zfar, aspectRatio);
-        } else {
-            projMatrix = orthoSpaceTransMat(scale, zfar, aspectRatio);
-        }
-        
-        return projMatrix * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
-    }
     
     // Generate projection matrix with screen dimensions (for NDC scaling)
     mat4 getProjectionMatrix() const {
@@ -63,6 +50,19 @@ struct Camera {
         }
         
         return projMatrix * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
+    }
+
+    // Generate inverse projection matrix with screen dimensions (for NDC scaling)
+    mat4 getInvProjectionMatrix() const {
+        mat4 projMatrix;
+
+        if (projection_type == ProjectionType::PERSPECTIVE) {
+            projMatrix = invPerspectiveProj(fov, znear, zfar);
+        }
+        else {
+            projMatrix = invOrthoSpaceTransMat(scale, zfar);
+        }
+        return invTranslation4(-1*pos) * qtm4(rot) * vulkanAxisRotate() * projMatrix;
     }
 
     // Common setters

@@ -50,7 +50,7 @@ inline void loadFaceBuffer(std::vector<unsigned int> const& Fin, std::vector<uns
 }
 
 // takes an obj file and loads the vertex data
-void Mesh::loadOBJ(const char* filename) {
+void Mesh::loadOBJ(string filename) {
 	// open the file
 	std::ifstream file(filename);
 	if (!file) throw std::runtime_error("Cannot open file");

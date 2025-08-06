@@ -2,6 +2,7 @@
 #include "matrixTemplate.hpp"
 #include "VectorFuncTemplate.hpp"
 #include <ostream>
+#include <span>
 using namespace std;
 struct vec2 {
     union {
@@ -13,6 +14,10 @@ struct vec2 {
     // Constructors
     vec2(float a1 = 0, float a2 = 0) : data{ a1, a2 } {}
     vec2(const float a[2]) : data{ a[0], a[1] } {}
+    vec2(std::span<const float> arr) {
+        assert(arr.size() == 2 && "vec2 requires exactly 2 floats");
+        std::copy(arr.begin(), arr.end(), data);
+    }
 
     // Subscript access
     float& operator[](int n) { return data[n]; }
@@ -66,6 +71,10 @@ struct vec2 {
     bool operator==(const vec2& v2) const {
         return eq<vec2, 2>(*this, v2);
     }
+    // Element-wise multiplication
+    vec2 elementWise(const vec2& v2) const {
+        return vecElemWise<vec2, 2>(*this, v2);
+    }
 };
 inline vec2 operator*(float n, const vec2& v2) {
     return v2 * n;
@@ -89,6 +98,10 @@ struct vec3 {
     // Constructors
     vec3(float a1 = 0, float a2 = 0, float a3 = 0) : data{ a1, a2, a3 } {}
     vec3(const float a[3]) : data{ a[0], a[1], a[2] } {}
+    vec3(std::span<const float> arr) {
+        assert(arr.size() == 3 && "vec3 requires exactly 3 floats");
+        std::copy(arr.begin(), arr.end(), data);
+    }
 
     // Subscript access
     float& operator[](int n) { return data[n]; }
@@ -157,6 +170,10 @@ struct vec3 {
     vec2 v3tv2() const {
         return vec2(x, y);
     }
+    // Element-wise multiplication
+    vec3 elementWise(const vec3& v2) const {
+        return vecElemWise<vec3, 3>(*this, v2);
+    }
 };
 inline vec3 operator*(float n, const vec3& v2) {
     return v2 * n;
@@ -179,6 +196,10 @@ struct vec4 {
     vec4(float a1 = 0, float a2 = 0, float a3 = 0, float a4 = 1) : data{ a1, a2, a3, a4 } {}
     vec4(const float a[4]) : data{ a[0], a[1], a[2], a[3] } {}
     vec4(const vec3& v, float a = 1) : data{ v.x, v.y, v.z, a } {}
+    vec4(std::span<const float> arr) {
+        assert(arr.size() == 4 && "vec4 requires exactly 4 floats");
+        std::copy(arr.begin(), arr.end(), data);
+    }
 
     // Subscript access
     float& operator[](int n) { return data[n]; }
@@ -277,6 +298,10 @@ struct vec4 {
     vec3 v4tv3() const {
         vec4 tmp = this->wNormalized();
         return vec3(tmp[0], tmp[1], tmp[2]);
+    }
+    // Element-wise multiplication
+    vec4 elementWise(const vec4& v2) const {
+        return vecElemWise<vec4, 4>(*this, v2);
     }
 };
 // scalar in oposite dirrection

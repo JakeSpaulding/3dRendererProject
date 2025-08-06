@@ -69,6 +69,19 @@ inline void vecNormalized(T& out, T const& v) {
         }
     }
 }
+// element wise multiplication
+template<typename T, int N>
+inline T vecElemWise(T const& v1, T const& v2) {
+    T tmp;
+    for (int i = 0; i < N; i++) tmp[i] = v1[i] * v2[i];
+    return tmp;
+}
+
+// distance between two vectors
+template<typename T, int N>
+inline float vecDist(T const& v1, T const& v2) {
+    return vecNormalized<T,N>(v1 - v2);
+}
 
 // checks if the two vectors have equal values
 template<typename T, int N>

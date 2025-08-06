@@ -8,8 +8,8 @@
 #include "BMPgenfuncs.hpp"
 using namespace std;
 int main(void) {
-    unsigned int Screen_x = 3840;
-    unsigned int Screen_y = 2160;
+    unsigned int Screen_x = 1280;
+    unsigned int Screen_y = 720;
 
     Vert a(vec3(1.0f, 0, -1.0f), vec2(0, 0));
     Vert b(vec3(-1.0f, 0, -1.0f), vec2(1, 0));
@@ -60,12 +60,25 @@ int main(void) {
         m.computeBBOX();
         return m;
     };
+    vector<pointLight> lights;
+    pointLight sampleLight;
+    sampleLight.pos = vec3(0.0f, 10.0f, 10.0f); // Position above and in front of the origin
+    sampleLight.radius = 10000.0f; // Maximum range of the light
 
+    // Ambient, diffuse, and specular colors (white light)
+    sampleLight.La = vec3(0.1f, 0.1f, 0.1f); // Ambient
+    sampleLight.Ld = vec3(0.8f, 0.8f, 0.8f); // Diffuse
+    sampleLight.Ls = vec3(1.0f, 1.0f, 1.0f); // Specular
     // Create test meshes with different alpha and color
+    lights.push_back(sampleLight);
+
     Mesh meshOpaque = makeTestMesh(0xff0000ff, -1.0f);   // Opaque blue
     Mesh meshSemi = makeTestMesh(0x80ff0080, -0.95f);    // Semi-transparent green
     Mesh meshTrans = makeTestMesh(0x40ffffff, -0.9f);    // More transparent white
-
+    meshOpaque.material.illum = 2;
+    mesh.material.illum = 2;
+    meshSemi.material.illum = 2;
+    meshTrans.material.illum = 2;
     // Create framebuffer and render
     fbo screenframe(Screen_x, Screen_y);
     fbo MSAATEST(Screen_x, Screen_y, 16, MSAA16xRotated);
@@ -74,8 +87,8 @@ int main(void) {
     vector<Mesh> msaaMeshes = {meshOpaque, meshSemi, meshTrans };
     
 
-    screenframe.drawMeshThreaded(mesh, cam2, 256);
-    MSAATEST.drawMeshesThreaded(msaaMeshes, cam0, 256);
+    screenframe.drawMeshThreaded(mesh, cam2, lights, 256);
+    MSAATEST.drawMeshesThreaded(msaaMeshes, cam0, lights ,256);
 
     // Write framebuffer to BMP
     FBOtBMP(screenframe.frame, "C:\\Users\\jakem\\source\\repos\\RasterEngine2\\resources\\test.bmp", Screen_x, Screen_y);
