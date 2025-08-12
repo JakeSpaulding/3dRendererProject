@@ -39,14 +39,15 @@ struct Material {
 
 	texture2d texture;
 	uint8_t illum; // illumination model
-    Material(vec3 ambient = vec3(1.0f, 1.0f, 1.0f), vec3 diffuse = vec3(0.64f, 0.64f, 0.64f),  vec3 specCol = vec3(0.5f, 0.5f, 0.5f ), float spec = 100.0f, float IO = 1.0f, float o = 1.0f, uint8_t il= 0, vec3 em = vec3(0.0f,0.0f,0.0f) ) 
+    Material(vec3 ambient = vec3(1.0f,1.0f,1.0f), vec3 diffuse = vec3(0.64f, 0.64f, 0.64f),  vec3 specCol = vec3(0.5f, 0.5f, 0.5f ), float spec = 32.0f, float IO = 1.0f, float o = 1.0f, uint8_t il= 2, vec3 em = vec3(0.0f,0.0f,0.0f) ) 
 						: ambientColor(ambient), diffuseColor(diffuse), specularColor(specCol), shininess(spec),IOR(IO),opacity(o), illum(il), emission(em) {}
 	// loads the the texture of a given filename, if none is inputted it just loads whatever is stored in textureFile
 	void loadTexture(const char* fname) {
 		texture.loadTexturePNG(fname);
 
 	}
-
+	// loads an mtl file
+	void loadMTL(const char* fname);
 
 	// setter functions
 	void setAmbientColor(const vec3& color) { ambientColor = color; }

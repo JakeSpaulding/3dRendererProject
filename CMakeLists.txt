@@ -20,7 +20,7 @@ add_executable (RasterEngine2
     "src/RasterEngine2.h"
 )
 
-target_include_directories(RasterEngine2 PRIVATE src External Inc) 
+target_include_directories(RasterEngine2 PRIVATE src External Inc Inc/buffer Inc/geometry Inc/ shading Inc/Vectors) 
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET RasterEngine2 PROPERTY CXX_STANDARD 20)

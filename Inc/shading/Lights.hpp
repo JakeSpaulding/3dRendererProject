@@ -1,7 +1,7 @@
 // contains functions and structs for lighting
 
 #pragma once
-#include "ScreenBuffer.hpp"
+#include "TriCastLib.hpp"
 
 // point light, no shadows, radiates in all dirrections
 struct pointLight {

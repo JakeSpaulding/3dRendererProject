@@ -319,4 +319,3 @@ inline vec3 faceNormal(const vec3& a, const vec3& b, const vec3& c) {
     vec3 B = c - a;
     return A.cross(B);
 }
-

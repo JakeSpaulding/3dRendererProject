@@ -6,12 +6,12 @@
 
 // 4x with a standard and equal, square offset
 std::vector<vec2> MSAA4xSquare({
-	vec2(-0.25f, -0.25f),
-	vec2(0.25f, -0.25f),
-	vec2(-0.25f, 0.25f),
-	vec2(0.25f, 0.25f)
-	});
-
+    vec2(-0.25f, -0.25f),
+    vec2(0.25f, -0.25f),
+    vec2(-0.25f, 0.25f),
+    vec2(0.25f, 0.25f)
+    });
+        
 // 2x MSAA - Rotated grid
 std::vector<vec2> MSAA2xRotated({
     vec2(-0.25f, -0.25f),

@@ -5,6 +5,9 @@
 
 // calculates the alpha of a on b (assuming no pre-multiplication)
 inline Color alphaBlend(Color src, Color dst) {
+	if (src.a == 0) {
+		return dst;
+	}
 	float srcA = src.a / 255.0f;
 	float dstA = dst.a / 255.0f;
 	// A0 = Aa + Ab * (1 - Aa)
@@ -51,20 +54,24 @@ inline Color mapNearestN(Vert const& v0, Vert const& v1, Vert const& v2, vec3 co
 // params are pixel position (p) color of the texture (Ctex) normal (n) material, vector from pixel to light(l) and the light (in world space coords)
 inline vec3 shadeLight(vec3 const& p, Color const& Ctex, vec3 const& n, vec3 const& cam, Material const& material, pointLight const& light) {
 	vec3 l = (light.pos - p).normalized(); // vector from pixel to light
-	float d = l.norm(); // distance from pixel to light
+	float d = (light.pos - p).norm(); // distance from pixel to light
 	if (d > light.radius) return vec3(0,0,0); // check if it is close enough to the light
-	vec3 v = (p - cam).normalized();
+	vec3 v = (p - cam).normalized(); // viewer vector
+
+	// attenuation
 	const float a = 1.0f;
-	const float b = 1.0f;
-	const float c = 1.0f;
+	const float b = 0.0f;
+	const float c = 0.0f;
 
 	vec3 Kd(Ctex.r * material.Kd.r / 255.0f, Ctex.g * material.Kd.g / 255.0f, Ctex.b * material.Kd.b / 255.0f); // multiply the texture color by material Kd
+	// vec3 Ka(Ctex.r * material.Ka.r / 255.0f, Ctex.g * material.Ka.g / 255.0f, Ctex.b * material.Ka.b / 255.0f); // multiply the texture color by material Ka
+	vec3 Ka = material.Ka;
 	// compute halfway vector
 	vec3 h = (l + v).normalized();
 
-	vec3 Ia = material.Ka.elementWise(light.La);
+	vec3 Ia = Ka.elementWise(light.La);
 	vec3 Id = Kd.elementWise(light.Ld) * max(n * l, 0.0f);
-	vec3 Is = material.Ks.elementWise(light.Ls) * powf(n * h, material.shininess);
+	vec3 Is = material.Ks.elementWise(light.Ls) * powf(max(n * h, 0.0f), material.shininess);
 
 	// compute the rgb float values
 	return Ia + (Id + Is) * (1.0f / (a + b * d + c * d * d));

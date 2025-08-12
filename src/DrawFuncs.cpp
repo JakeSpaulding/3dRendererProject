@@ -1,9 +1,10 @@
 #pragma once
-#include "ScreenBuffer.hpp"
+#include "buffers/ScreenBuffer.hpp"
 #include "PixelShadeFuncs.hpp"
 #include <thread>
 #include <chrono>
-
+#include "matlib.hpp"
+#include "RasterEngine2.h"
 using namespace std;
 
 // moves the buffer into the frame
@@ -23,7 +24,7 @@ void fbo::buffertFrame() {
 				B += static_cast<float>(buffer[idb + s].b);
 				A += static_cast<float>(buffer[idb + s].a);
 
-				// compare the zbuffer and update if it is lower
+				// set Zframe to the nearest z value
 				if (Zbuffer[idb + s] < Zframe[idf]) Zframe[idf] = Zbuffer[idb + s];
 			}
 			// average the color values
@@ -41,10 +42,15 @@ void fbo::buffertFrame() {
 void fbo::drawRange(int xmin, int xmax, int ymin, int ymax,
 	Vert const& v0, Vert const& v1, Vert const& v2, float area, Material const& material,
 	vector<pointLight> const& lights, mat4 const& invmat, vec3 const& cam) {
+
+	// compute face normal
 	vec3 Normal = (v1.pos - v0.pos).cross(v2.pos - v0.pos).normalized();
+
 	// loop through pixels
-	for (int y = ymin; y <= ymax; y++) { // Keep int - can be negative during clipping
-		for (int x = xmin; x <= xmax; x++) { // Keep int - can be negative during clipping
+	for (int y = ymin; y <= ymax; y++) {
+		for (int x = xmin; x <= xmax; x++) {
+
+			// indicate if we have called the frag shader yet
 			int cached = -1;
 			const size_t id = static_cast<size_t>(y * screen_width + x) * samples; // Buffer index - use size_t
 
@@ -52,88 +58,69 @@ void fbo::drawRange(int xmin, int xmax, int ymin, int ymax,
 			for (unsigned int s = 0; s < samples; s++) { // Graphics iteration - unsigned int
 				// save the point value
 				vec3 p(static_cast<float>(x) + sampleOffset[s][0], static_cast<float>(y) + sampleOffset[s][1], 0);
-
-				// calculate barycentric weights
-				float w0 = edgeFunction(v1.pos, v2.pos, p);
-				float w1 = edgeFunction(v2.pos, v0.pos, p);
-				float w2 = edgeFunction(v0.pos, v1.pos, p);
-
+				// cout << "x: " << x << " y: " << y << " id: " << id << " sampleOffset: " << sampleOffset[s] << " p: " << p << endl;
 				// take barycentric weights
-				vec3 w(w0, w1, w2);
-				// check if it's in the triangle
-				if (w[0] >= 0 && w[1] >= 0 && w[2] >= 0) {
-					w[0] /= (area * v0.pos[2]), w[1] /= (area * v1.pos[2]), w[2] /= (area * v2.pos[2]); // normalize & apply inverse z values
-					// find the z coordinate of our pixel
-					p[2] = 1.0f / (w[0] + w[1] + w[2]);
-					// depth test
-					if (p.z >= 0 && p.z <= Zbuffer[id + s]) {
-						// check if we have called the frag shader yet
-						if (cached == -1) {
+				vec3 w(edgeFunction(v1.pos, v2.pos, p), edgeFunction(v2.pos, v0.pos, p), edgeFunction(v0.pos, v1.pos, p));
 
-							if (p.z >= 0 && p.z <= Zbuffer[id + s]) {
-								Color c = mapBilinear(v0, v1, v2, p, w, material);
-								// shade smooth
-								
-								// apply flat lighting if appropriate
-								if (material.illum) {
-									vec3 worldPos = invmat * p; // get the world pos
-									vec3 colorSum = material.Ie; // set the initial lit color to be the emmisive color
-									if (material.illum > 1) {
-										Normal = baryInterpolate<vec3>(w, v0.N, v1.N, v2.N, worldPos.z).normalized();
-									}
-									// loop through lights
-									for (pointLight light : lights) {
-										// calculate the lighting
-										colorSum = colorSum + shadeLight(worldPos, c, Normal, cam, material, light);
-									}
-									// apply lighting
-									c.r = uint8_t(min(colorSum.r * 255.0f + 0.5f, 255.0f));
-									c.g = uint8_t(min(colorSum.g * 255.0f + 0.5f, 255.0f));
-									c.b = uint8_t(min(colorSum.b * 255.0f + 0.5f, 255.0f));
-								}
-
-								// apply alpha if transparent
-								if (c.a == 255) {
-									// set z buffer
-									Zbuffer[id + s] = p[2];
-									buffer[id + s] = c;
-								}
-								else {
-									buffer[id + s] = alphaBlend(c, buffer[id + s]);
-								}
-								cached = static_cast<int>(id + s); // Cast for comparison
-							}
-							// add cached values
-							else {
-								Zbuffer[id + s] = Zbuffer[cached];
-								buffer[id + s] = buffer[cached];
-							}
-						}
-					}
+				//  skip if the pixel is not in the triangle
+				if (w[0] < 0 || w[1] < 0 || w[2] < 0) {
+					continue;
 				}
+
+				w[0] /= (area * v0.pos[2]), w[1] /= (area * v1.pos[2]), w[2] /= (area * v2.pos[2]); // apply inverse z to weights
+				// find the z coordinate of our pixel
+				p.z = 1.0f / (w[0] + w[1] + w[2]);
+
+				// depth test
+				if (p.z <  0 || p.z > Zbuffer[id + s]) {
+					continue;
+				}
+
+				// check if we have called the frag shader yet
+				if (cached != -1) {
+					Zbuffer[id + s] = Zbuffer[cached];
+					buffer[id + s] = buffer[cached];
+					continue;
+				}
+
+				// map the texture to the pixel
+				Color c = mapBilinear(v0, v1, v2, p, w, material);
+
+				// apply flat lighting if appropriate
+				if (material.illum) {
+					vec3 worldPos = invmat * p; // get the world pos
+					vec3 colorSum = material.Ie; // set the initial lit color to be the emmisive color
+					// shade smooth
+					if (material.illum > 1) {
+						Normal = baryInterpolate<vec3>(w, v0.N, v1.N, v2.N, worldPos.z).normalized();
+					}
+					// loop through lights
+					for (int i = 0; i < lights.size(); i++) {
+						// calculate the lighting
+						colorSum = colorSum + shadeLight(worldPos, c, Normal, cam, material, lights[i]);
+					}
+					// apply lighting
+					c.r = uint8_t(min(gammaCorrect(colorSum.r, GAM) * 255.0f + 0.5f, 255.0f));
+					c.g = uint8_t(min(gammaCorrect(colorSum.g, GAM) * 255.0f + 0.5f, 255.0f));
+					c.b = uint8_t(min(gammaCorrect(colorSum.b, GAM) * 255.0f + 0.5f, 255.0f));
+				}
+
+				//apply alpha blend if transparent
+				if (c.a == 255) {
+					// set z buffer
+					Zbuffer[id + s] = p.z;
+					buffer[id + s] = c;
+				}
+				else {
+					buffer[id + s] = alphaBlend(c, buffer[id + s]);
+				}
+					// cache the shaded value
+				cached = static_cast<unsigned int>(id + s); // Cast for comparison
 			}
 		}
 	}
 }
-/*
-void fbo::drawMesh(Mesh const& mesh, mat4 const& projMat) {
-	// project the points
-	vector<vec3> NDC;
-	projectVBO(NDC, mesh.VBO, projMat);
-	// loop through the triangles (this can be multithreaded)
-	for (size_t i = 0; i < mesh.VEBO.size(); i += 3) { // Container iteration - use size_t
-		// initialize Vert structs to make life easier
-		Vert a(NDC[mesh.VEBO[i]], mesh.UV[mesh.UVEBO[i]], mesh.Normals[mesh.NEBO[i]]);
-		Vert b(NDC[mesh.VEBO[i + 1]], mesh.UV[mesh.UVEBO[i + 1]], mesh.Normals[mesh.NEBO[i + 1]]);
-		Vert c(NDC[mesh.VEBO[i + 2]], mesh.UV[mesh.UVEBO[i + 2]], mesh.Normals[mesh.NEBO[i + 2]]);
-		float area = edgeFunction(a.pos, b.pos, c.pos);
-		drawRange(0,screen_width -1, 0, screen_height-1, a, b, c, area, mesh.material, lights, invmat);
-	}
-	if (samples > 1) {
-		buffertFrame();
-	}
-}
-*/
+
 void fbo::drawTile(Mesh const& mesh, vector<vec3> const& NDC, int txmin, int txmax, int tymin, int tymax,
 	vector<pointLight> const& lights, mat4 const& invmat, vec3 const& cam){
 	// loop through each tri
@@ -163,15 +150,18 @@ void fbo::threadDrawInitializer(Mesh const& mesh, vector<vec3> const& NDC,
 	vector<thread> threads;
 	threads.reserve(numThreads);
 	// break into tiles
+	uint32_t tcount = 0;
 	for (unsigned int y = 0; y < screen_height; y += tileSize) { // Graphics coordinates - unsigned int
 		for (unsigned int x = 0; x < screen_width; x += tileSize) { // Graphics coordinates - unsigned int
 			// determine if the tile is in range, if not truncate it
 			int txmax = static_cast<int>(min(screen_width, x + tileSize)) - 1;
 			int tymax = static_cast<int>(min(screen_height, y + tileSize)) - 1;
 			// create a thread
+			//cout << "thread# " << tcount << " innit\n";
 			threads.emplace_back([=, &mesh, &NDC] {
 				this->drawTile(mesh, NDC, static_cast<int>(x), txmax, static_cast<int>(y), tymax, lights, invmat, cam);
 				});
+			tcount++;
 		}
 	}
 	for (auto& t : threads) {
@@ -184,8 +174,8 @@ void fbo::threadDrawInitializer(Mesh const& mesh, vector<vec3> const& NDC,
 void fbo::drawMeshThreaded(Mesh const& mesh, Camera const& cam, vector<pointLight> const& lights, unsigned int tileSize) { // Graphics parameter - unsigned int
 	// project points
 
-	mat4 projMat = NDCtSc(screen_width, screen_height) * cam.getProjectionMatrix();
-	mat4 invmat = cam.getInvProjectionMatrix() * invNDCtSc(screen_width, screen_height);
+	mat4 projMat = NDCtSc(screen_width, screen_height) * cam.getProjectionMatrix(screen_width,screen_height);
+	mat4 invmat = cam.getInvProjectionMatrix(screen_width,screen_height) * invNDCtSc(screen_width, screen_height);
 	vector<vec3> NDC;
 	projectVBO(NDC, mesh.VBO, projMat);
 
@@ -198,8 +188,8 @@ void fbo::drawMeshThreaded(Mesh const& mesh, Camera const& cam, vector<pointLigh
 void fbo::drawMeshesThreaded(vector<Mesh> const& meshes, Camera const& cam, vector<pointLight> const& lights, unsigned int tileSize) {
 	if (meshes.empty()) return;
 
-	mat4 projMat = NDCtSc(screen_width, screen_height) * cam.getProjectionMatrix(); // create the projection mat
-	mat4 invmat = cam.getInvProjectionMatrix() * invNDCtSc(screen_width, screen_height);
+	mat4 projMat = NDCtSc(screen_width, screen_height) * cam.getProjectionMatrix(screen_width,screen_height); // create the projection mat
+	mat4 invmat = cam.getInvProjectionMatrix(screen_width,screen_height) * invNDCtSc(screen_width, screen_height);
 
 	// make a vector of projected vbos
 	vector<vector<vec3>> projVBOs(meshes.size());

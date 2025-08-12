@@ -83,9 +83,31 @@ inline mat4 vulkanAxisRotate() {
         0, 0, 0, 1);
 }
 
+// does not handle aspect ratio, converts from ndc to screenspace
+inline mat4 NDCtSc(unsigned int w, unsigned int h) {
+    float x = float(w) * 0.5f;
+    float y = float(h) * 0.5f;
+        return mat4(
+            x, 0, 0, x,
+            0, y, 0, y,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        );
+}
+// does not handle aspect ratio, converts from screenspace to ndc
+inline mat4 invNDCtSc(unsigned int w, unsigned int h) {
+    float x = 2.0f/ float(w);
+    float y = 2.0f/ float(h);
+    return mat4(
+        x, 0, 0,-x,
+        0, y, 0,-y,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );
+}
 
 // Alternative version that handles aspect ratio correction in the projection
-inline mat4 NDCtSc(unsigned int w, unsigned int h) {
+inline mat4 SquareNDCtSc(unsigned int w, unsigned int h) {
     float x = float(w) * 0.5f;
     float y = float(h) * 0.5f;
     float aspect = float(w) / static_cast<float>(h);
@@ -110,7 +132,7 @@ inline mat4 NDCtSc(unsigned int w, unsigned int h) {
     }
 }
 // returns the inverse of this transform
-inline mat4 invNDCtSc(unsigned int w, unsigned int h) {
+inline mat4 invSquareNDCtSc(unsigned int w, unsigned int h) {
     float x = 2.0f / float(w);
     float y = 2.0f / float(h);
     float aspect = float(w) / static_cast<float>(h);
@@ -331,3 +353,7 @@ template <typename T>
 T lerp(const T& a, const T& b, float t){
     return a * (1 - t) + b * t;
 }   
+
+inline float gammaCorrect(float c, const float g) {
+    return powf(std::clamp(c, 0.0f, 1.0f), g);
+}

@@ -38,9 +38,9 @@ struct Camera {
     Camera(vec3 p = vec3(0, 0, 0), quaternion r = quaternion(0, 0, 0, 1))
         : pos(p), rot(r), projection_type(ProjectionType::PERSPECTIVE),
           fov(90.0f), znear(1.0f), scale(1.0f), zfar(100.0f) {}
-    
+   
     // Generate projection matrix with screen dimensions (for NDC scaling)
-    mat4 getProjectionMatrix() const {
+    mat4 getProjectionMatrixSquare() const {
         mat4 projMatrix;
         
         if (projection_type == ProjectionType::PERSPECTIVE) {
@@ -52,15 +52,37 @@ struct Camera {
         return projMatrix * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
     }
 
-    // Generate inverse projection matrix with screen dimensions (for NDC scaling)
-    mat4 getInvProjectionMatrix() const {
+    // generates the camera's view matrix
+    mat4 ViewMatrix() const {
+        return vulkanAxisRotate() * qtm4(rot.conj())* translation4(-1 * pos);
+    }
+
+    mat4 invViewMatrix() const {
+        return invTranslation4(-1 * pos) * qtm4(rot) * vulkanAxisRotate();;
+    }
+
+    // Generate projection matrix with screen dimensions (for NDC scaling)
+    mat4 getProjectionMatrix(uint32_t w, uint32_t h) const {
         mat4 projMatrix;
 
         if (projection_type == ProjectionType::PERSPECTIVE) {
-            projMatrix = invPerspectiveProj(fov, znear, zfar);
+            projMatrix = perspectiveProj(fov, znear, zfar, float(w*1.0f/h));
         }
         else {
-            projMatrix = invOrthoSpaceTransMat(scale, zfar);
+            projMatrix = orthoSpaceTransMat(scale, zfar, float(w * 1.0f / h));
+        }
+
+        return projMatrix * vulkanAxisRotate() * qtm4(rot.conj()) * translation4(-1 * pos);
+    }
+    // Generate inverse projection matrix with screen dimensions (for NDC scaling)
+    mat4 getInvProjectionMatrix(uint32_t w, uint32_t h) const {
+        mat4 projMatrix;
+
+        if (projection_type == ProjectionType::PERSPECTIVE) {
+            projMatrix = invPerspectiveProj(fov, znear, zfar, float(w * 1.0f / h));
+        }
+        else {
+            projMatrix = invOrthoSpaceTransMat(scale, zfar, float(w * 1.0f / h));
         }
         return invTranslation4(-1*pos) * qtm4(rot) * vulkanAxisRotate() * projMatrix;
     }
@@ -95,24 +117,24 @@ struct Camera {
     bool isOrthographic() const { return projection_type == ProjectionType::ORTHOGRAPHIC; }
     
     // Switch projection type (preserves common parameters)
-    void switchToPerspective(float ang = 90.0f, float n = 1.0f) {
+    void switchToPerspective() {
         projection_type = ProjectionType::PERSPECTIVE;
-        fov = ang;
-        znear = n;
     }
     
-    void switchToOrthographic(float s = 1.0f) {
+    void switchToOrthographic() {
         projection_type = ProjectionType::ORTHOGRAPHIC;
-        scale = s;
     }
 };
 
-// Convenience factory functions for backward compatibility
+// returns a perspective camera: 
+// position, rotation, fov, near clipping plane, far clipping plane
 inline Camera CreatePerspectiveCamera(vec3 pos = vec3(0, 0, 0), quaternion rot = quaternion(0, 0, 0, 1), 
                                      float fov = 90.0f, float znear = 1.0f, float zfar = 100.0f) {
     return Camera(pos, rot, fov, znear, zfar);
 }
 
+// returns an orthographic camera: 
+// position, rotation, fov, scaling factor, far clipping plane
 inline Camera CreateOrthographicCamera(vec3 pos = vec3(0, 0, 0), quaternion rot = quaternion(0, 0, 0, 1),
                                       float scale = 1.0f, float zfar = 100.0f) {
     return Camera(pos, rot, scale, zfar);

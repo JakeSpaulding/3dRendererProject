@@ -17,7 +17,6 @@ void texture2d::loadTextureBMP(const char* filename) {
 	w = width;
 	h = height;
 	img.resize(static_cast<size_t>(w) * h); // Buffer size - use size_t
-
 	file.seekg(54); // set our read head to the beginning of the pixel data
 	
 	// create a vector to store the row

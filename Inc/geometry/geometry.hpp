@@ -1,7 +1,6 @@
 #pragma once
 // contains mesh and vertex structs
-#include <vector>  
-#include <string>
+#include "RasterEngine2.h"
 #include "matlib.hpp"  
 #include "Materials.hpp"
 

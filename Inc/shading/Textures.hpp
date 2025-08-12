@@ -1,6 +1,7 @@
 // contains the texture struct
 
 #pragma once
+#include "Color.hpp"
 #include "stb_image.h"
 #include <fstream>
 #include <vector>
@@ -8,24 +9,6 @@
 #include <cmath>
 #include <string>
 
-struct Color {
-    union {
-        struct { uint8_t r,g,b,a; };
-        uint32_t color;
-    };
-    // constructors  
-    Color(uint8_t x, uint8_t y, uint8_t z, uint8_t w) : r(x), g(y), b(z), a(w) {}
-    Color(uint32_t c = 0xFFFFFFFF) : color(c) {}
-    // lets you add colors
-    Color operator+(Color const& c2) {
-        Color c;
-        c.r = r + c2.r;
-        c.g = g + c2.g;
-        c.b = b + c2.b;
-        c.a = a + c2.a;
-        return c;
-    }
-}; // define the color vars, each channel is an 8 bit int and the color is stored as a 32 bit int  
 
 // wraps uv coordinates to be normalized
 inline float wrap(float n) {
